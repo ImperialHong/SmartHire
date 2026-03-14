@@ -7,6 +7,9 @@ import com.smarthire.modules.notification.dto.request.NotificationListRequest;
 import com.smarthire.modules.notification.dto.response.NotificationResponse;
 import com.smarthire.modules.notification.dto.response.NotificationUnreadCountResponse;
 import com.smarthire.modules.notification.service.NotificationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
+@Tag(name = "Notifications", description = "In-app notification listing and read management")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -29,6 +34,7 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
+    @Operation(summary = "List the current user's notifications")
     @GetMapping
     public ApiResponse<PageResponse<NotificationResponse>> listMyNotifications(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -43,6 +49,7 @@ public class NotificationController {
         ));
     }
 
+    @Operation(summary = "Get the unread notification count")
     @GetMapping("/unread-count")
     public ApiResponse<NotificationUnreadCountResponse> unreadCount(
         @AuthenticationPrincipal AuthenticatedUser currentUser
@@ -52,6 +59,7 @@ public class NotificationController {
         ));
     }
 
+    @Operation(summary = "Mark a notification as read")
     @PatchMapping("/{id}/read")
     public ApiResponse<NotificationResponse> markAsRead(
         @AuthenticationPrincipal AuthenticatedUser currentUser,

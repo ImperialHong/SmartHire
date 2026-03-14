@@ -7,6 +7,9 @@ import com.smarthire.modules.auth.dto.response.AuthResponse;
 import com.smarthire.modules.auth.dto.response.UserProfileResponse;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Authentication", description = "Account registration, login and current user profile")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -25,16 +29,22 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @Operation(summary = "Register a candidate account")
     @PostMapping("/register")
     public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ApiResponse.success("Registration succeeded", authService.register(request));
     }
 
+    @Operation(summary = "Login and receive a JWT token")
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success("Login succeeded", authService.login(request));
     }
 
+    @Operation(
+        summary = "Get the current authenticated user profile",
+        security = {@SecurityRequirement(name = "bearerAuth")}
+    )
     @GetMapping("/me")
     public ApiResponse<UserProfileResponse> me(@AuthenticationPrincipal AuthenticatedUser currentUser) {
         return ApiResponse.success(UserProfileResponse.fromAuthenticatedUser(currentUser));

@@ -44,6 +44,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/health").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs", "/api/jobs/*").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("HR", "ADMIN")

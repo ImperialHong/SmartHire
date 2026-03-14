@@ -13,17 +13,16 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 ## 当前阶段
 
-项目目前处于 `P0 核心业务闭环基本完成` 阶段，后端主链路已经打通：
+项目目前处于 `P0 核心业务闭环已完成` 阶段，后端主链路已经打通：
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
 已完成但还可以继续增强的方向：
 
-- README 进一步细化为接口文档
-- Docker Compose 本地一键启动
 - 简历文件上传
 - 统计面板和后台增强
-- 前端页面联调
+- Postman 集合或前端联调
+- 真实前端页面与联调截图
 
 ## 技术栈
 
@@ -33,6 +32,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - MyBatis-Plus
 - MySQL 8
 - JWT
+- Springdoc OpenAPI / Swagger UI
 - Maven
 - JUnit 5 + MockMvc + Mockito
 
@@ -111,7 +111,9 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 ```text
 SmartHire/
 ├── backend/                     # Spring Boot 后端
-├── sql/                         # 数据库初始化脚本
+├── docs/                        # 演示说明与截图清单
+├── sql/                         # 数据库初始化与种子数据脚本
+├── docker-compose.yml
 └── smarthire_development_plan.md
 ```
 
@@ -131,10 +133,22 @@ CREATE DATABASE smarthire CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 mysql -u root -p smarthire < sql/001_init_schema.sql
 ```
 
-这个脚本会初始化：
+如果你想直接导入演示数据，再执行：
+
+```bash
+mysql -u root -p smarthire < sql/002_seed_demo_data.sql
+```
+
+`001` 会初始化：
 
 - 核心表结构
 - 角色数据：`CANDIDATE`、`HR`、`ADMIN`
+
+`002` 会初始化：
+
+- 演示账号
+- 演示岗位
+- 演示投递、面试与通知数据
 
 ### 2. 配置环境变量
 
@@ -166,6 +180,13 @@ mvn spring-boot:run
 GET http://localhost:8080/api/health
 ```
 
+Swagger / OpenAPI 文档地址：
+
+```text
+http://localhost:8080/swagger-ui.html
+http://localhost:8080/v3/api-docs
+```
+
 ### 4. 运行测试
 
 ```bash
@@ -175,8 +196,8 @@ mvn test
 
 当前后端测试结果：
 
-- `38` 个测试通过
-- 覆盖认证、岗位、投递、面试、通知和基础安全规则
+- `40` 个测试通过
+- 覆盖认证、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
 
 ### 5. 使用 Docker Compose 启动
 
@@ -185,6 +206,8 @@ mvn test
 ```bash
 docker compose up --build
 ```
+
+首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql` 和 `sql/002_seed_demo_data.sql`。
 
 服务默认暴露：
 
@@ -228,7 +251,16 @@ docker compose down -v
 
 ## 如何创建 HR / ADMIN 账号
 
-当前注册接口默认只能注册候选人账号。如果要本地测试 HR 或 ADMIN 能力，可以先调用注册接口创建普通用户，再手动绑定角色。
+当前注册接口默认只能注册候选人账号。如果你已经执行了 `sql/002_seed_demo_data.sql`，可以直接使用下面的演示账号。
+
+| 角色 | 邮箱 | 密码 |
+| --- | --- | --- |
+| Candidate | `candidate@example.com` | `password123` |
+| Candidate | `candidate2@example.com` | `password123` |
+| HR | `hr@example.com` | `password123` |
+| Admin | `admin@example.com` | `password123` |
+
+如果你没有导入演示数据，也可以先调用注册接口创建普通用户，再手动绑定角色。
 
 示例：把某个用户绑定为 HR。
 
@@ -367,7 +399,14 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 补充 Docker Compose 和初始化数据脚本
-2. 增加简历上传能力
-3. 输出接口文档或导入 Postman 集合
-4. 接一个轻量前端，把闭环真正跑起来
+1. 增加简历上传能力
+2. 导出 Postman 集合或补更细的接口说明
+3. 接一个轻量前端，把闭环真正跑起来
+4. 继续补管理员视角和基础统计
+
+## 演示资料
+
+仓库里已经预留了演示说明与截图清单：
+
+- [docs/demo-guide.md](/Users/jay/Projects/SmartHire/docs/demo-guide.md)
+- [docs/screenshots/README.md](/Users/jay/Projects/SmartHire/docs/screenshots/README.md)

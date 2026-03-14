@@ -8,6 +8,9 @@ import com.smarthire.modules.application.dto.request.ApplicationStatusUpdateRequ
 import com.smarthire.modules.application.dto.response.ApplicationResponse;
 import com.smarthire.modules.application.service.ApplicationService;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -23,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
+@Tag(name = "Applications", description = "Candidate applications and recruiter review workflow")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api")
 public class ApplicationController {
@@ -33,6 +38,7 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
+    @Operation(summary = "Submit an application to a job")
     @PostMapping("/applications")
     public ApiResponse<ApplicationResponse> apply(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -41,6 +47,7 @@ public class ApplicationController {
         return ApiResponse.success("Application submitted successfully", applicationService.apply(currentUser, request));
     }
 
+    @Operation(summary = "List the current candidate's applications")
     @GetMapping("/applications/me")
     public ApiResponse<PageResponse<ApplicationResponse>> listMyApplications(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -55,6 +62,7 @@ public class ApplicationController {
         ));
     }
 
+    @Operation(summary = "List applications under a specific job")
     @GetMapping("/jobs/{jobId}/applications")
     public ApiResponse<PageResponse<ApplicationResponse>> listJobApplications(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -71,6 +79,7 @@ public class ApplicationController {
         ));
     }
 
+    @Operation(summary = "Update application status and recruiter note")
     @PatchMapping("/applications/{id}/status")
     public ApiResponse<ApplicationResponse> updateStatus(
         @AuthenticationPrincipal AuthenticatedUser currentUser,

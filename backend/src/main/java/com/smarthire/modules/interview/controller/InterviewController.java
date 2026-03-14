@@ -8,6 +8,9 @@ import com.smarthire.modules.interview.dto.request.InterviewListRequest;
 import com.smarthire.modules.interview.dto.request.InterviewUpdateRequest;
 import com.smarthire.modules.interview.dto.response.InterviewResponse;
 import com.smarthire.modules.interview.service.InterviewService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -23,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Validated
+@Tag(name = "Interviews", description = "Interview scheduling and follow-up management")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api")
 public class InterviewController {
@@ -33,6 +38,7 @@ public class InterviewController {
         this.interviewService = interviewService;
     }
 
+    @Operation(summary = "Schedule an interview for an application")
     @PostMapping("/interviews")
     public ApiResponse<InterviewResponse> scheduleInterview(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -44,6 +50,7 @@ public class InterviewController {
         );
     }
 
+    @Operation(summary = "Update interview details, status or result")
     @PatchMapping("/interviews/{id}")
     public ApiResponse<InterviewResponse> updateInterview(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -56,6 +63,7 @@ public class InterviewController {
         );
     }
 
+    @Operation(summary = "List the current candidate's interviews")
     @GetMapping("/interviews/me")
     public ApiResponse<PageResponse<InterviewResponse>> listMyInterviews(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
@@ -70,6 +78,7 @@ public class InterviewController {
         ));
     }
 
+    @Operation(summary = "List interviews under a specific job")
     @GetMapping("/jobs/{jobId}/interviews")
     public ApiResponse<PageResponse<InterviewResponse>> listJobInterviews(
         @AuthenticationPrincipal AuthenticatedUser currentUser,
