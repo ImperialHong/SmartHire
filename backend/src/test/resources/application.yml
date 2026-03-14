@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:smarthire;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jackson:
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+app:
+  jwt:
+    secret: smarthire-test-secret-key-at-least-32-bytes
+    access-token-expiration-seconds: 3600

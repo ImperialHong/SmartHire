@@ -21,3 +21,8 @@ server:
 logging:
   level:
     com.smarthire: INFO
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:smarthire-dev-secret-key-at-least-32-bytes-long}
+    access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:86400}
