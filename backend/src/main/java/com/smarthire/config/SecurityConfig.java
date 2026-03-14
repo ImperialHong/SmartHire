@@ -5,6 +5,7 @@ import com.smarthire.modules.auth.security.RestAccessDeniedHandler;
 import com.smarthire.modules.auth.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -44,6 +45,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/jobs", "/api/jobs/*").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/jobs").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/jobs/*").hasAnyRole("HR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/jobs/*").hasAnyRole("HR", "ADMIN")
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
