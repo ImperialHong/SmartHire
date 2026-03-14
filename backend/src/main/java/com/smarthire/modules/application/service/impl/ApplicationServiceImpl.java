@@ -16,6 +16,7 @@ import com.smarthire.modules.auth.mapper.UserMapper;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
+import com.smarthire.modules.notification.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +39,18 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final JobMapper jobMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     public ApplicationServiceImpl(
         ApplicationMapper applicationMapper,
         JobMapper jobMapper,
-        UserMapper userMapper
+        UserMapper userMapper,
+        NotificationService notificationService
     ) {
         this.applicationMapper = applicationMapper;
         this.jobMapper = jobMapper;
         this.userMapper = userMapper;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -81,6 +85,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         application.setCreatedAt(now);
         application.setUpdatedAt(now);
         applicationMapper.insert(application);
+
+        notificationService.createNotification(
+            job.getCreatedBy(),
+            "APPLICATION_SUBMITTED",
+            "New application received",
+            currentUser.fullName() + " applied for " + job.getTitle(),
+            "APPLICATION",
+            application.getId()
+        );
 
         return ApplicationResponse.forCandidate(application, job);
     }
@@ -173,7 +186,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         LocalDateTime now = LocalDateTime.now();
         String normalizedStatus = normalizeStatus(request.status());
-        if (!normalizedStatus.equals(application.getStatus())) {
+        boolean statusChanged = !normalizedStatus.equals(application.getStatus());
+        if (statusChanged) {
             application.setStatus(normalizedStatus);
             application.setStatusUpdatedAt(now);
         }
@@ -184,6 +198,16 @@ public class ApplicationServiceImpl implements ApplicationService {
         applicationMapper.updateById(application);
 
         UserEntity candidate = userMapper.selectById(application.getCandidateId());
+        if (statusChanged) {
+            notificationService.createNotification(
+                application.getCandidateId(),
+                "APPLICATION_STATUS_CHANGED",
+                "Application status updated",
+                "Your application for " + job.getTitle() + " is now " + normalizedStatus,
+                "APPLICATION",
+                application.getId()
+            );
+        }
         return ApplicationResponse.forHr(application, job, candidate);
     }
 

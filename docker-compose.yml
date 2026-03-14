@@ -1,0 +1,40 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: smarthire-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: smarthire
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/001_init_schema.sql:/docker-entrypoint-initdb.d/001_init_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: smarthire-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: smarthire
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      SERVER_PORT: 8080
+      JWT_SECRET: smarthire-dev-secret-key-at-least-32-bytes-long
+      JWT_ACCESS_TOKEN_EXPIRATION_SECONDS: 86400
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:

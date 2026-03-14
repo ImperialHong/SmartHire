@@ -22,6 +22,7 @@ import com.smarthire.modules.interview.mapper.InterviewMapper;
 import com.smarthire.modules.interview.service.impl.InterviewServiceImpl;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
+import com.smarthire.modules.notification.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,9 @@ class InterviewServiceImplTests {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private InterviewServiceImpl interviewService;
@@ -90,6 +94,14 @@ class InterviewServiceImplTests {
         assertEquals("PENDING", response.result());
         assertNotNull(response.createdAt());
         verify(applicationMapper).updateById(any(ApplicationEntity.class));
+        verify(notificationService).createNotification(
+            88L,
+            "INTERVIEW_SCHEDULED",
+            "Interview scheduled",
+            "Your interview for Backend Engineer is scheduled at " + request.interviewAt(),
+            "INTERVIEW",
+            300L
+        );
     }
 
     @Test
@@ -183,6 +195,14 @@ class InterviewServiceImplTests {
         assertEquals("PASSED", response.result());
         assertEquals("Room B", response.location());
         assertEquals("https://meet.example.com/new", response.meetingLink());
+        verify(notificationService).createNotification(
+            88L,
+            "INTERVIEW_UPDATED",
+            "Interview updated",
+            "Your interview for Backend Engineer has been updated",
+            "INTERVIEW",
+            300L
+        );
     }
 
     private ApplicationEntity buildApplication(Long applicationId, Long jobId, Long candidateId, String status) {

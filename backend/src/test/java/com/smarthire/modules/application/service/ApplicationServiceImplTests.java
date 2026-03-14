@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.smarthire.common.exception.BusinessException;
@@ -18,6 +19,7 @@ import com.smarthire.modules.auth.mapper.UserMapper;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
+import com.smarthire.modules.notification.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,9 @@ class ApplicationServiceImplTests {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private ApplicationServiceImpl applicationService;
@@ -75,6 +80,14 @@ class ApplicationServiceImplTests {
         assertNotNull(response.appliedAt());
         assertNotNull(response.createdAt());
         assertNotNull(response.updatedAt());
+        verify(notificationService).createNotification(
+            99L,
+            "APPLICATION_SUBMITTED",
+            "New application received",
+            "Candidate User applied for Backend Engineer",
+            "APPLICATION",
+            200L
+        );
     }
 
     @Test
@@ -143,6 +156,39 @@ class ApplicationServiceImplTests {
                 200L,
                 new ApplicationStatusUpdateRequest("REVIEWING", "Looks promising")
             )
+        );
+    }
+
+    @Test
+    void updateStatusShouldNotifyCandidateWhenStatusChanges() {
+        AuthenticatedUser currentUser = new AuthenticatedUser(
+            10L,
+            "hr@example.com",
+            "HR User",
+            List.of("HR")
+        );
+        ApplicationEntity application = new ApplicationEntity();
+        application.setId(200L);
+        application.setJobId(100L);
+        application.setCandidateId(88L);
+        application.setStatus("APPLIED");
+
+        when(applicationMapper.selectById(200L)).thenReturn(application);
+        when(jobMapper.selectById(100L)).thenReturn(buildOpenJob(100L, 10L));
+
+        applicationService.updateStatus(
+            currentUser,
+            200L,
+            new ApplicationStatusUpdateRequest("REVIEWING", "Looks promising")
+        );
+
+        verify(notificationService).createNotification(
+            88L,
+            "APPLICATION_STATUS_CHANGED",
+            "Application status updated",
+            "Your application for Backend Engineer is now REVIEWING",
+            "APPLICATION",
+            200L
         );
     }
 

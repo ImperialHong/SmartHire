@@ -18,6 +18,7 @@ import com.smarthire.modules.interview.mapper.InterviewMapper;
 import com.smarthire.modules.interview.service.InterviewService;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
+import com.smarthire.modules.notification.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -44,17 +45,20 @@ public class InterviewServiceImpl implements InterviewService {
     private final ApplicationMapper applicationMapper;
     private final JobMapper jobMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     public InterviewServiceImpl(
         InterviewMapper interviewMapper,
         ApplicationMapper applicationMapper,
         JobMapper jobMapper,
-        UserMapper userMapper
+        UserMapper userMapper,
+        NotificationService notificationService
     ) {
         this.interviewMapper = interviewMapper;
         this.applicationMapper = applicationMapper;
         this.jobMapper = jobMapper;
         this.userMapper = userMapper;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -102,6 +106,14 @@ public class InterviewServiceImpl implements InterviewService {
         applicationMapper.updateById(application);
 
         UserEntity candidate = userMapper.selectById(application.getCandidateId());
+        notificationService.createNotification(
+            application.getCandidateId(),
+            "INTERVIEW_SCHEDULED",
+            "Interview scheduled",
+            "Your interview for " + job.getTitle() + " is scheduled at " + request.interviewAt(),
+            "INTERVIEW",
+            interview.getId()
+        );
         return InterviewResponse.from(interview, application, job, candidate);
     }
 
@@ -141,6 +153,14 @@ public class InterviewServiceImpl implements InterviewService {
         interviewMapper.updateById(interview);
 
         UserEntity candidate = userMapper.selectById(application.getCandidateId());
+        notificationService.createNotification(
+            application.getCandidateId(),
+            "INTERVIEW_UPDATED",
+            "Interview updated",
+            "Your interview for " + job.getTitle() + " has been updated",
+            "INTERVIEW",
+            interview.getId()
+        );
         return InterviewResponse.from(interview, application, job, candidate);
     }
 
