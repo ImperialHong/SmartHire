@@ -32,6 +32,9 @@ Capture these screenshots after importing `sql/002_seed_demo_data.sql` and runni
 10. `10-admin-statistics.png`
    Admin overview showing job, application, and interview summary counts.
 
+11. `11-admin-user-list.png`
+   Admin user list showing roles, statuses, and recent login information.
+
 Recommended storage rule:
 
 - Put actual screenshot files in this `docs/screenshots/` directory.

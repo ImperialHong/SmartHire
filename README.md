@@ -12,6 +12,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - HR/管理员安排面试、更新面试
 - 站内通知联动投递和面试流程
 - HR/管理员查看基础招聘统计概览
+- 管理员分页查看用户并启用/禁用账号
 
 ## 当前阶段
 
@@ -24,10 +25,10 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 简历文件上传
 - 基础数据统计
 - Docker 与 API 文档入口
+- 管理员轻量后台基础能力
 
 已完成但还可以继续增强的方向：
 
-- 管理员轻量后台
 - 基础操作日志
 - Postman 集合或前端联调
 - 真实前端页面与联调截图
@@ -128,6 +129,18 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 返回岗位、投递、面试三类基础聚合数据
 - 包含投递状态分布、面试状态分布和面试结果分布
 
+### 7. 管理员模块
+
+- `GET /api/admin/users`
+- `PATCH /api/admin/users/{id}/status`
+
+支持能力：
+
+- 管理员分页查看全部用户
+- 支持按关键字、状态、角色筛选
+- 返回用户角色、状态、最近登录时间
+- 支持启用 / 禁用账号
+
 ## 仓库结构
 
 ```text
@@ -222,8 +235,8 @@ mvn test
 
 当前后端测试结果：
 
-- `52` 个测试通过
-- 覆盖认证、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
+- `60` 个测试通过
+- 覆盖认证、管理员用户管理、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
 
 ### 5. 使用 Docker Compose 启动
 
@@ -276,6 +289,7 @@ docker compose down -v
 - 具备 HR 能力
 - 可跨岗位管理业务数据
 - 可查看全局统计概览
+- 可分页查看全部用户并调整账号状态
 
 ## 如何创建 HR / ADMIN 账号
 
@@ -317,6 +331,8 @@ WHERE u.email = 'hr@example.com';
 | 岗位 | `PUT` | `/api/jobs/{id}` | `HR/ADMIN` |
 | 岗位 | `DELETE` | `/api/jobs/{id}` | `HR/ADMIN` |
 | 统计 | `GET` | `/api/statistics/overview` | `HR/ADMIN` |
+| 管理员 | `GET` | `/api/admin/users` | `ADMIN` |
+| 管理员 | `PATCH` | `/api/admin/users/{id}/status` | `ADMIN` |
 | 投递 | `POST` | `/api/applications` | `CANDIDATE` |
 | 投递 | `GET` | `/api/applications/me` | `CANDIDATE` |
 | 投递 | `GET` | `/api/jobs/{jobId}/applications` | `HR/ADMIN` |
@@ -406,6 +422,22 @@ curl http://localhost:8080/api/statistics/overview \
   -H "Authorization: Bearer <token>"
 ```
 
+### 查看用户列表
+
+```bash
+curl "http://localhost:8080/api/admin/users?page=1&size=10&status=ACTIVE&roleCode=HR" \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+### 禁用用户
+
+```bash
+curl -X PATCH http://localhost:8080/api/admin/users/2/status \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"DISABLED"}'
+```
+
 ### 安排面试
 
 ```http
@@ -439,15 +471,16 @@ Content-Type: application/json
 - 同一候选人同一岗位只能投递一次
 - 每个申请当前只允许一条面试记录
 - 通知表支持未读统计和已读状态更新
+- 管理员可直接控制用户状态为 `ACTIVE / DISABLED`
 
 ## 下一步建议
 
 如果继续往下做，最值得补的顺序是：
 
-1. 增加管理员轻量后台能力
+1. 补基础操作日志
 2. 导出 Postman 集合或补更细的接口说明
 3. 接一个轻量前端，把闭环真正跑起来
-4. 补基础操作日志和部署细节
+4. 继续补管理员岗位视图或部署细节
 
 ## 演示资料
 
