@@ -478,6 +478,24 @@ button {
     resize: vertical;
 }
 
+.field-note {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #64748b;
+}
+
+.field-note--info {
+    color: #4f6b90;
+}
+
+.field-note--good {
+    color: #2f6b45;
+}
+
+.field-note--warn {
+    color: #b45309;
+}
+
 .button-row {
     display: flex;
     flex-wrap: wrap;

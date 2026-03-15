@@ -14,6 +14,9 @@ import { SectionCard } from "../../shared/components/SectionCard";
 import { StatusPill } from "../../shared/components/StatusPill";
 import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
 
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_COVER_LETTER_LENGTH = 2000;
+
 export function CandidateDashboardPage() {
     const { session } = useAuth();
     const queryClient = useQueryClient();
@@ -108,8 +111,106 @@ export function CandidateDashboardPage() {
                 queryClient.invalidateQueries({ queryKey: ["candidate-notifications"] }),
                 queryClient.invalidateQueries({ queryKey: ["candidate-notifications-unread"] })
             ]);
+        },
+        onError(error) {
+            setFeedback({
+                tone: "warn",
+                text: error instanceof Error ? error.message : "Could not mark the notification as read."
+            });
         }
     });
+
+    function handleResumeSelection(file: File | null) {
+        setResumeFile(file);
+        if (file) {
+            setResumePath("");
+        }
+        setFeedback(null);
+    }
+
+    function handleResumeUpload() {
+        if (!resumeFile) {
+            setFeedback({
+                tone: "warn",
+                text: "Choose a PDF resume before uploading."
+            });
+            return;
+        }
+
+        const isPdf = resumeFile.type === "application/pdf" || resumeFile.name.toLowerCase().endsWith(".pdf");
+        if (!isPdf) {
+            setFeedback({
+                tone: "warn",
+                text: "Resume upload only supports PDF files."
+            });
+            return;
+        }
+
+        if (resumeFile.size > MAX_RESUME_SIZE_BYTES) {
+            setFeedback({
+                tone: "warn",
+                text: "Resume file is too large. Please keep it within 5 MB."
+            });
+            return;
+        }
+
+        uploadMutation.mutate(resumeFile);
+    }
+
+    function handleApply() {
+        if (!selectedJob || !selectedJobId) {
+            setFeedback({
+                tone: "warn",
+                text: "Select a job before submitting an application."
+            });
+            return;
+        }
+
+        if (selectedJob.status !== "OPEN") {
+            setFeedback({
+                tone: "warn",
+                text: "This job is no longer accepting applications."
+            });
+            return;
+        }
+
+        if (selectedJob.applicationDeadline) {
+            const deadline = new Date(selectedJob.applicationDeadline);
+            if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now()) {
+                setFeedback({
+                    tone: "warn",
+                    text: "The application deadline has already passed for this job."
+                });
+                return;
+            }
+        }
+
+        if (!resumePath) {
+            setFeedback({
+                tone: "warn",
+                text: "Upload your PDF resume before submitting the application."
+            });
+            return;
+        }
+
+        if (resumeFile && !uploadMutation.isPending) {
+            setFeedback({
+                tone: "warn",
+                text: "You selected a new resume file. Upload it first before applying."
+            });
+            return;
+        }
+
+        if (coverLetter.trim().length > MAX_COVER_LETTER_LENGTH) {
+            setFeedback({
+                tone: "warn",
+                text: `Cover letter must stay within ${MAX_COVER_LETTER_LENGTH} characters.`
+            });
+            return;
+        }
+
+        applyMutation.mutate();
+    }
 
     return (
         <div className="page-grid">
@@ -206,20 +307,18 @@ export function CandidateDashboardPage() {
                                 <input
                                     id="candidate-resume"
                                     accept="application/pdf"
-                                    onChange={event => setResumeFile(event.target.files?.[0] || null)}
+                                    onChange={event => handleResumeSelection(event.target.files?.[0] || null)}
                                     type="file"
                                 />
-                                {resumePath ? <p className="muted-text">Current uploaded path: {resumePath}</p> : null}
+                                <p className="field-note">PDF only, up to 5 MB. Upload is required before applying.</p>
+                                {resumeFile ? <p className="field-note field-note--info">Selected file: {resumeFile.name}</p> : null}
+                                {resumePath ? <p className="field-note field-note--good">Uploaded resume path: {resumePath}</p> : null}
                             </div>
                             <div className="button-row">
                                 <button
                                     className="button button--ghost"
                                     disabled={!resumeFile || uploadMutation.isPending}
-                                    onClick={() => {
-                                        if (resumeFile) {
-                                            uploadMutation.mutate(resumeFile);
-                                        }
-                                    }}
+                                    onClick={handleResumeUpload}
                                     type="button"
                                 >
                                     {uploadMutation.isPending ? "Uploading..." : "Upload Resume"}
@@ -229,17 +328,23 @@ export function CandidateDashboardPage() {
                                 <label htmlFor="candidate-cover-letter">Cover letter</label>
                                 <textarea
                                     id="candidate-cover-letter"
-                                    onChange={event => setCoverLetter(event.target.value)}
+                                    onChange={event => {
+                                        setCoverLetter(event.target.value);
+                                        setFeedback(null);
+                                    }}
                                     placeholder="Write a short message to the recruiter"
                                     rows={5}
                                     value={coverLetter}
                                 />
+                                <p className="field-note field-note--info">
+                                    {coverLetter.trim().length}/{MAX_COVER_LETTER_LENGTH} characters
+                                </p>
                             </div>
                             <div className="button-row">
                                 <button
                                     className="button button--primary"
                                     disabled={!selectedJobId || applyMutation.isPending}
-                                    onClick={() => applyMutation.mutate()}
+                                    onClick={handleApply}
                                     type="button"
                                 >
                                     {applyMutation.isPending ? "Submitting..." : "Submit Application"}

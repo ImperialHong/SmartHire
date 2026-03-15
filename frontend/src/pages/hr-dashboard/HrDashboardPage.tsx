@@ -25,6 +25,9 @@ const EXPERIENCE_LEVEL_OPTIONS = ["ENTRY", "JUNIOR", "MID", "SENIOR"] as const;
 const APPLICATION_STATUS_OPTIONS = ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"] as const;
 const INTERVIEW_STATUS_OPTIONS = ["SCHEDULED", "COMPLETED", "CANCELLED"] as const;
 const INTERVIEW_RESULT_OPTIONS = ["PENDING", "PASSED", "FAILED"] as const;
+const MAX_HR_NOTE_LENGTH = 2000;
+const MAX_INTERVIEW_REMARK_LENGTH = 500;
+const MAX_INTERVIEW_FIELD_LENGTH = 255;
 
 interface JobFormState {
     title: string;
@@ -165,6 +168,62 @@ function buildInterviewForm(interview: InterviewItem): InterviewFormState {
     };
 }
 
+function validateJobForm(form: JobFormState) {
+    if (!form.title.trim()) {
+        return "Job title is required.";
+    }
+    if (!form.description.trim()) {
+        return "Job description is required.";
+    }
+
+    const salaryMin = form.salaryMin.trim();
+    const salaryMax = form.salaryMax.trim();
+    if (salaryMin && Number.isNaN(Number(salaryMin))) {
+        return "Salary min must be a valid number.";
+    }
+    if (salaryMax && Number.isNaN(Number(salaryMax))) {
+        return "Salary max must be a valid number.";
+    }
+    if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
+        return "Salary max must be greater than or equal to salary min.";
+    }
+
+    return null;
+}
+
+function validateReviewForm(form: ReviewFormState) {
+    if (form.hrNote.trim().length > MAX_HR_NOTE_LENGTH) {
+        return `Recruiter note must stay within ${MAX_HR_NOTE_LENGTH} characters.`;
+    }
+
+    return null;
+}
+
+function validateInterviewForm(form: InterviewFormState, isUpdate: boolean) {
+    if (!form.interviewAt.trim()) {
+        return isUpdate ? "Interview time is still required when updating the schedule." : "Choose an interview time before scheduling.";
+    }
+
+    const interviewAt = new Date(form.interviewAt);
+    if (Number.isNaN(interviewAt.getTime())) {
+        return "Interview time is invalid.";
+    }
+    if (interviewAt.getTime() <= Date.now()) {
+        return "Interview time must be in the future.";
+    }
+    if (form.location.trim().length > MAX_INTERVIEW_FIELD_LENGTH) {
+        return "Interview location must stay within 255 characters.";
+    }
+    if (form.meetingLink.trim().length > MAX_INTERVIEW_FIELD_LENGTH) {
+        return "Meeting link must stay within 255 characters.";
+    }
+    if (form.remark.trim().length > MAX_INTERVIEW_REMARK_LENGTH) {
+        return `Interview remark must stay within ${MAX_INTERVIEW_REMARK_LENGTH} characters.`;
+    }
+
+    return null;
+}
+
 function getStatusTone(status: string) {
     if (["OPEN", "OFFERED", "PASSED", "COMPLETED"].includes(status)) {
         return "good" as const;
@@ -188,6 +247,9 @@ export function HrDashboardPage() {
     const [reviewForm, setReviewForm] = useState<ReviewFormState>(emptyReviewForm);
     const [interviewForm, setInterviewForm] = useState<InterviewFormState>(emptyInterviewForm);
     const [feedback, setFeedback] = useState<{ tone: "good" | "warn" | "info"; text: string } | null>(null);
+    const [jobFormMessage, setJobFormMessage] = useState<string | null>(null);
+    const [reviewFormMessage, setReviewFormMessage] = useState<string | null>(null);
+    const [interviewFormMessage, setInterviewFormMessage] = useState<string | null>(null);
 
     const statsQuery = useQuery({
         queryKey: ["statistics-overview", "hr", session?.token],
@@ -248,6 +310,7 @@ export function HrDashboardPage() {
 
     useEffect(() => {
         setJobForm(selectedJob ? buildJobForm(selectedJob) : emptyJobForm());
+        setJobFormMessage(null);
     }, [selectedJob]);
 
     useEffect(() => {
@@ -264,11 +327,31 @@ export function HrDashboardPage() {
 
     useEffect(() => {
         setReviewForm(selectedApplication ? buildReviewForm(selectedApplication) : emptyReviewForm());
+        setReviewFormMessage(null);
     }, [selectedApplication]);
 
     useEffect(() => {
         setInterviewForm(selectedInterview ? buildInterviewForm(selectedInterview) : emptyInterviewForm());
+        setInterviewFormMessage(null);
     }, [selectedInterview]);
+
+    function patchJobForm(patch: Partial<JobFormState>) {
+        setJobForm(current => ({ ...current, ...patch }));
+        setJobFormMessage(null);
+        setFeedback(null);
+    }
+
+    function patchReviewForm(patch: Partial<ReviewFormState>) {
+        setReviewForm(current => ({ ...current, ...patch }));
+        setReviewFormMessage(null);
+        setFeedback(null);
+    }
+
+    function patchInterviewForm(patch: Partial<InterviewFormState>) {
+        setInterviewForm(current => ({ ...current, ...patch }));
+        setInterviewFormMessage(null);
+        setFeedback(null);
+    }
 
     const createJobMutation = useMutation({
         mutationFn: (request: JobUpsertRequest) => createJob(session!.token, request),
@@ -402,6 +485,12 @@ export function HrDashboardPage() {
     });
 
     function handleJobSubmit() {
+        const validationMessage = validateJobForm(jobForm);
+        if (validationMessage) {
+            setJobFormMessage(validationMessage);
+            return;
+        }
+
         const request = buildJobRequest(jobForm);
         if (selectedJob) {
             updateJobMutation.mutate({ jobId: selectedJob.id, request });
@@ -424,6 +513,13 @@ export function HrDashboardPage() {
         if (!selectedApplication) {
             return;
         }
+
+        const validationMessage = validateReviewForm(reviewForm);
+        if (validationMessage) {
+            setReviewFormMessage(validationMessage);
+            return;
+        }
+
         reviewMutation.mutate({
             applicationId: selectedApplication.id,
             status: reviewForm.status,
@@ -433,6 +529,12 @@ export function HrDashboardPage() {
 
     function handleInterviewSubmit() {
         if (!selectedApplication) {
+            return;
+        }
+
+        const validationMessage = validateInterviewForm(interviewForm, Boolean(selectedInterview));
+        if (validationMessage) {
+            setInterviewFormMessage(validationMessage);
             return;
         }
 
@@ -600,22 +702,22 @@ export function HrDashboardPage() {
                     <div className="form-stack">
                         <div className="form-field">
                             <label htmlFor="hr-job-title">Job title</label>
-                            <input
-                                id="hr-job-title"
-                                onChange={event => setJobForm(current => ({ ...current, title: event.target.value }))}
-                                placeholder="Backend Engineer"
-                                type="text"
-                                value={jobForm.title}
+                                <input
+                                    id="hr-job-title"
+                                    onChange={event => patchJobForm({ title: event.target.value })}
+                                    placeholder="Backend Engineer"
+                                    type="text"
+                                    value={jobForm.title}
                             />
                         </div>
                         <div className="form-field">
                             <label htmlFor="hr-job-description">Description</label>
-                            <textarea
-                                id="hr-job-description"
-                                onChange={event => setJobForm(current => ({ ...current, description: event.target.value }))}
-                                placeholder="Describe the role, stack, and responsibilities"
-                                rows={5}
-                                value={jobForm.description}
+                                <textarea
+                                    id="hr-job-description"
+                                    onChange={event => patchJobForm({ description: event.target.value })}
+                                    placeholder="Describe the role, stack, and responsibilities"
+                                    rows={5}
+                                    value={jobForm.description}
                             />
                         </div>
                         <div className="dashboard-grid dashboard-grid--two">
@@ -623,7 +725,7 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-city">City</label>
                                 <input
                                     id="hr-job-city"
-                                    onChange={event => setJobForm(current => ({ ...current, city: event.target.value }))}
+                                    onChange={event => patchJobForm({ city: event.target.value })}
                                     type="text"
                                     value={jobForm.city}
                                 />
@@ -632,7 +734,7 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-category">Category</label>
                                 <input
                                     id="hr-job-category"
-                                    onChange={event => setJobForm(current => ({ ...current, category: event.target.value }))}
+                                    onChange={event => patchJobForm({ category: event.target.value })}
                                     type="text"
                                     value={jobForm.category}
                                 />
@@ -641,7 +743,7 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-employment">Employment type</label>
                                 <select
                                     id="hr-job-employment"
-                                    onChange={event => setJobForm(current => ({ ...current, employmentType: event.target.value }))}
+                                    onChange={event => patchJobForm({ employmentType: event.target.value })}
                                     value={jobForm.employmentType}
                                 >
                                     {EMPLOYMENT_TYPE_OPTIONS.map(option => (
@@ -655,7 +757,7 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-level">Experience level</label>
                                 <select
                                     id="hr-job-level"
-                                    onChange={event => setJobForm(current => ({ ...current, experienceLevel: event.target.value }))}
+                                    onChange={event => patchJobForm({ experienceLevel: event.target.value })}
                                     value={jobForm.experienceLevel}
                                 >
                                     {EXPERIENCE_LEVEL_OPTIONS.map(option => (
@@ -670,7 +772,7 @@ export function HrDashboardPage() {
                                 <input
                                     id="hr-job-salary-min"
                                     inputMode="decimal"
-                                    onChange={event => setJobForm(current => ({ ...current, salaryMin: event.target.value }))}
+                                    onChange={event => patchJobForm({ salaryMin: event.target.value })}
                                     placeholder="18000"
                                     type="text"
                                     value={jobForm.salaryMin}
@@ -681,7 +783,7 @@ export function HrDashboardPage() {
                                 <input
                                     id="hr-job-salary-max"
                                     inputMode="decimal"
-                                    onChange={event => setJobForm(current => ({ ...current, salaryMax: event.target.value }))}
+                                    onChange={event => patchJobForm({ salaryMax: event.target.value })}
                                     placeholder="28000"
                                     type="text"
                                     value={jobForm.salaryMax}
@@ -691,7 +793,7 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-status">Status</label>
                                 <select
                                     id="hr-job-status"
-                                    onChange={event => setJobForm(current => ({ ...current, status: event.target.value }))}
+                                    onChange={event => patchJobForm({ status: event.target.value })}
                                     value={jobForm.status}
                                 >
                                     {JOB_STATUS_OPTIONS.map(option => (
@@ -705,12 +807,16 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-job-deadline">Application deadline</label>
                                 <input
                                     id="hr-job-deadline"
-                                    onChange={event => setJobForm(current => ({ ...current, applicationDeadline: event.target.value }))}
+                                    onChange={event => patchJobForm({ applicationDeadline: event.target.value })}
                                     type="datetime-local"
                                     value={jobForm.applicationDeadline}
                                 />
                             </div>
                         </div>
+                        <p className="field-note field-note--info">
+                            Title and description are required. Salary range must be numeric and ordered.
+                        </p>
+                        {jobFormMessage ? <p className="field-note field-note--warn">{jobFormMessage}</p> : null}
                         <div className="button-row">
                             <button
                                 className="button button--primary"
@@ -817,7 +923,7 @@ export function HrDashboardPage() {
                                     <label htmlFor="hr-application-status">Application status</label>
                                     <select
                                         id="hr-application-status"
-                                        onChange={event => setReviewForm(current => ({ ...current, status: event.target.value }))}
+                                        onChange={event => patchReviewForm({ status: event.target.value })}
                                         value={reviewForm.status}
                                     >
                                         {APPLICATION_STATUS_OPTIONS.map(option => (
@@ -842,12 +948,17 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-application-note">Recruiter note</label>
                                 <textarea
                                     id="hr-application-note"
-                                    onChange={event => setReviewForm(current => ({ ...current, hrNote: event.target.value }))}
+                                    onChange={event => patchReviewForm({ hrNote: event.target.value })}
                                     placeholder="Add guidance for later review steps"
                                     rows={4}
                                     value={reviewForm.hrNote}
                                 />
+                                <p className="field-note field-note--info">
+                                    {reviewForm.hrNote.trim().length}/{MAX_HR_NOTE_LENGTH} characters
+                                </p>
                             </div>
+
+                            {reviewFormMessage ? <p className="field-note field-note--warn">{reviewFormMessage}</p> : null}
 
                             <div className="button-row">
                                 <button
@@ -887,7 +998,7 @@ export function HrDashboardPage() {
                                     <label htmlFor="hr-interview-at">Interview time</label>
                                     <input
                                         id="hr-interview-at"
-                                        onChange={event => setInterviewForm(current => ({ ...current, interviewAt: event.target.value }))}
+                                        onChange={event => patchInterviewForm({ interviewAt: event.target.value })}
                                         type="datetime-local"
                                         value={interviewForm.interviewAt}
                                     />
@@ -896,7 +1007,7 @@ export function HrDashboardPage() {
                                     <label htmlFor="hr-interview-location">Location</label>
                                     <input
                                         id="hr-interview-location"
-                                        onChange={event => setInterviewForm(current => ({ ...current, location: event.target.value }))}
+                                        onChange={event => patchInterviewForm({ location: event.target.value })}
                                         placeholder="Conference Room A / Remote"
                                         type="text"
                                         value={interviewForm.location}
@@ -906,7 +1017,7 @@ export function HrDashboardPage() {
                                     <label htmlFor="hr-interview-link">Meeting link</label>
                                     <input
                                         id="hr-interview-link"
-                                        onChange={event => setInterviewForm(current => ({ ...current, meetingLink: event.target.value }))}
+                                        onChange={event => patchInterviewForm({ meetingLink: event.target.value })}
                                         placeholder="https://meet.example.com/..."
                                         type="text"
                                         value={interviewForm.meetingLink}
@@ -917,7 +1028,7 @@ export function HrDashboardPage() {
                                         <label htmlFor="hr-interview-status">Interview status</label>
                                         <select
                                             id="hr-interview-status"
-                                            onChange={event => setInterviewForm(current => ({ ...current, status: event.target.value }))}
+                                            onChange={event => patchInterviewForm({ status: event.target.value })}
                                             value={interviewForm.status}
                                         >
                                             {INTERVIEW_STATUS_OPTIONS.map(option => (
@@ -933,7 +1044,7 @@ export function HrDashboardPage() {
                                         <label htmlFor="hr-interview-result">Interview result</label>
                                         <select
                                             id="hr-interview-result"
-                                            onChange={event => setInterviewForm(current => ({ ...current, result: event.target.value }))}
+                                            onChange={event => patchInterviewForm({ result: event.target.value })}
                                             value={interviewForm.result}
                                         >
                                             {INTERVIEW_RESULT_OPTIONS.map(option => (
@@ -950,12 +1061,17 @@ export function HrDashboardPage() {
                                 <label htmlFor="hr-interview-remark">Interview remark</label>
                                 <textarea
                                     id="hr-interview-remark"
-                                    onChange={event => setInterviewForm(current => ({ ...current, remark: event.target.value }))}
+                                    onChange={event => patchInterviewForm({ remark: event.target.value })}
                                     placeholder="Add context for interviewer handoff"
                                     rows={3}
                                     value={interviewForm.remark}
                                 />
+                                <p className="field-note field-note--info">
+                                    {interviewForm.remark.trim().length}/{MAX_INTERVIEW_REMARK_LENGTH} characters
+                                </p>
                             </div>
+
+                            {interviewFormMessage ? <p className="field-note field-note--warn">{interviewFormMessage}</p> : null}
 
                             <div className="button-row">
                                 <button
