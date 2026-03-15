@@ -47,11 +47,38 @@ export function CandidateDashboardPage() {
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [resumePath, setResumePath] = useState("");
     const [feedback, setFeedback] = useState<{ tone: "good" | "warn" | "info"; text: string } | null>(null);
+    const applications = applicationsQuery.data?.records || [];
+    const interviews = interviewsQuery.data?.records || [];
+    const notifications = notificationsQuery.data?.records || [];
 
     const selectedJob = useMemo(
         () => jobsQuery.data?.records.find(job => job.id === selectedJobId) || null,
         [jobsQuery.data?.records, selectedJobId]
     );
+    const orderedNotifications = useMemo(
+        () => [...notifications].sort((left, right) => {
+            if (left.isRead !== right.isRead) {
+                return Number(left.isRead) - Number(right.isRead);
+            }
+            return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        }),
+        [notifications]
+    );
+    const nextInterview = useMemo(
+        () => interviews
+            .filter(interview => {
+                const timestamp = new Date(interview.interviewAt).getTime();
+                return !Number.isNaN(timestamp) && timestamp > Date.now();
+            })
+            .sort((left, right) => new Date(left.interviewAt).getTime() - new Date(right.interviewAt).getTime())[0] || null,
+        [interviews]
+    );
+    const candidateMetrics = useMemo(() => ([
+        { label: "Applications", value: applications.length },
+        { label: "Upcoming interviews", value: interviews.filter(item => item.status === "SCHEDULED").length },
+        { label: "Unread updates", value: unreadCountQuery.data?.unreadCount ?? notifications.filter(item => !item.isRead).length },
+        { label: "Resume ready", value: resumePath ? "Yes" : "No" }
+    ]), [applications.length, interviews, notifications, resumePath, unreadCountQuery.data?.unreadCount]);
 
     useEffect(() => {
         if (!jobsQuery.data?.records.length) {
@@ -218,6 +245,23 @@ export function CandidateDashboardPage() {
                 eyebrow="Candidate Workspace"
                 title="Apply, track, and stay updated"
                 description="The first real candidate flow is now wired to the live backend APIs."
+                action={
+                    <button
+                        className="button button--ghost"
+                        onClick={() => {
+                            void Promise.all([
+                                jobsQuery.refetch(),
+                                applicationsQuery.refetch(),
+                                interviewsQuery.refetch(),
+                                notificationsQuery.refetch(),
+                                unreadCountQuery.refetch()
+                            ]);
+                        }}
+                        type="button"
+                    >
+                        Refresh All
+                    </button>
+                }
             >
                 <div className="dashboard-grid dashboard-grid--two">
                     <article className="panel">
@@ -240,6 +284,14 @@ export function CandidateDashboardPage() {
                             <li>Live lists for applications, interviews, and notifications</li>
                         </ul>
                     </article>
+                </div>
+                <div className="metric-grid">
+                    {candidateMetrics.map(metric => (
+                        <article className="metric-card" key={metric.label}>
+                            <span>{metric.label}</span>
+                            <strong>{metric.value}</strong>
+                        </article>
+                    ))}
                 </div>
             </SectionCard>
 
@@ -298,9 +350,34 @@ export function CandidateDashboardPage() {
                 >
                     {selectedJob ? (
                         <div className="form-stack">
+                            <div className="metric-grid">
+                                <article className="metric-card">
+                                    <span>Salary range</span>
+                                    <strong>{formatSalaryRange(selectedJob)}</strong>
+                                </article>
+                                <article className="metric-card">
+                                    <span>Work setup</span>
+                                    <strong>{selectedJob.city || "Unknown city"}</strong>
+                                </article>
+                                <article className="metric-card">
+                                    <span>Category</span>
+                                    <strong>{selectedJob.category || "General"}</strong>
+                                </article>
+                                <article className="metric-card">
+                                    <span>Deadline</span>
+                                    <strong>{formatDateTime(selectedJob.applicationDeadline)}</strong>
+                                </article>
+                            </div>
                             <div className="panel panel--soft">
-                                <p className="muted-text">Deadline</p>
-                                <strong>{formatDateTime(selectedJob.applicationDeadline)}</strong>
+                                <div className="list-card__top">
+                                    <strong>Application checklist</strong>
+                                    <StatusPill tone={resumePath ? "good" : "warn"}>
+                                        {resumePath ? "Resume uploaded" : "Upload required"}
+                                    </StatusPill>
+                                </div>
+                                <p className="muted-text">
+                                    Upload a PDF resume first, then submit the application with an optional cover letter.
+                                </p>
                             </div>
                             <div className="form-field">
                                 <label htmlFor="candidate-resume">Upload resume (PDF)</label>
@@ -360,6 +437,23 @@ export function CandidateDashboardPage() {
                 </SectionCard>
             </div>
 
+            {nextInterview ? (
+                <div className="dashboard-grid dashboard-grid--two">
+                    <div className="panel panel--soft">
+                        <strong>Next interview</strong>
+                        <p>{nextInterview.jobTitle || "Upcoming interview"}</p>
+                        <p className="muted-text">
+                            {formatDateTime(nextInterview.interviewAt)} · {nextInterview.location || nextInterview.meetingLink || "Location TBD"}
+                        </p>
+                    </div>
+                    <div className="panel panel--soft">
+                        <strong>Application momentum</strong>
+                        <p>{applications.length} submitted · {interviews.length} interviews tracked</p>
+                        <p className="muted-text">Unread notifications stay pinned to the top of your updates list.</p>
+                    </div>
+                </div>
+            ) : null}
+
             <div className="dashboard-grid dashboard-grid--three">
                 <SectionCard
                     eyebrow="My Applications"
@@ -368,9 +462,9 @@ export function CandidateDashboardPage() {
                 >
                     {applicationsQuery.isLoading ? (
                         <p className="muted-text">Loading applications...</p>
-                    ) : applicationsQuery.data?.records.length ? (
+                    ) : applications.length ? (
                         <div className="stack-list">
-                            {applicationsQuery.data.records.map(application => (
+                            {applications.map(application => (
                                 <article className="list-card list-card--static" key={application.id}>
                                     <div className="list-card__top">
                                         <strong>{application.jobTitle || "Untitled job"}</strong>
@@ -397,9 +491,9 @@ export function CandidateDashboardPage() {
                 >
                     {interviewsQuery.isLoading ? (
                         <p className="muted-text">Loading interviews...</p>
-                    ) : interviewsQuery.data?.records.length ? (
+                    ) : interviews.length ? (
                         <div className="stack-list">
-                            {interviewsQuery.data.records.map(interview => (
+                            {interviews.map(interview => (
                                 <article className="list-card list-card--static" key={interview.id}>
                                     <div className="list-card__top">
                                         <strong>{interview.jobTitle || "Interview"}</strong>
@@ -426,9 +520,9 @@ export function CandidateDashboardPage() {
                 >
                     {notificationsQuery.isLoading ? (
                         <p className="muted-text">Loading notifications...</p>
-                    ) : notificationsQuery.data?.records.length ? (
+                    ) : orderedNotifications.length ? (
                         <div className="stack-list">
-                            {notificationsQuery.data.records.map(notification => (
+                            {orderedNotifications.map(notification => (
                                 <article className="list-card list-card--static" key={notification.id}>
                                     <div className="list-card__top">
                                         <strong>{notification.title}</strong>

@@ -162,6 +162,15 @@ export function AdminDashboardPage() {
     const jobCards = jobsQuery.data?.records || [];
     const userCards = usersQuery.data?.records || [];
     const logCards = logsQuery.data?.records || [];
+    const activeFilterCount = [jobKeyword, jobStatus, jobOwnerKeyword, userKeyword, userStatus, userRoleCode, logAction, logTargetType, logOperatorUserId]
+        .filter(Boolean)
+        .length;
+    const adminMetrics = [
+        { label: "Visible jobs", value: jobCards.length },
+        { label: "Visible users", value: userCards.length },
+        { label: "Visible logs", value: logCards.length },
+        { label: "Active filters", value: activeFilterCount }
+    ];
 
     const statsPanels = statsQuery.data ? [
         formatStatusBreakdown("Job status mix", Object.entries(statsQuery.data.jobs.byStatus)),
@@ -174,12 +183,46 @@ export function AdminDashboardPage() {
         updateUserMutation.mutate({ userId: user.id, status: nextStatus });
     }
 
+    function clearJobFilters() {
+        setJobKeyword("");
+        setJobStatus("");
+        setJobOwnerKeyword("");
+    }
+
+    function clearUserFilters() {
+        setUserKeyword("");
+        setUserStatus("");
+        setUserRoleCode("");
+    }
+
+    function clearLogFilters() {
+        setLogAction("");
+        setLogTargetType("");
+        setLogOperatorUserId("");
+    }
+
     return (
         <div className="page-grid">
             <SectionCard
                 eyebrow="Admin Workspace"
                 title="See the whole recruiting system breathe"
                 description="The React admin console now reads live statistics, cross-team jobs, user controls, and operation logs from the backend."
+                action={
+                    <button
+                        className="button button--ghost"
+                        onClick={() => {
+                            void Promise.all([
+                                statsQuery.refetch(),
+                                jobsQuery.refetch(),
+                                usersQuery.refetch(),
+                                logsQuery.refetch()
+                            ]);
+                        }}
+                        type="button"
+                    >
+                        Refresh All
+                    </button>
+                }
             >
                 <div className="dashboard-grid dashboard-grid--three">
                     <article className="panel">
@@ -237,6 +280,14 @@ export function AdminDashboardPage() {
                         )}
                     </article>
                 </div>
+                <div className="metric-grid">
+                    {adminMetrics.map(metric => (
+                        <article className="metric-card" key={metric.label}>
+                            <span>{metric.label}</span>
+                            <strong>{metric.value}</strong>
+                        </article>
+                    ))}
+                </div>
             </SectionCard>
 
             {feedback ? <div className={`notice notice--${feedback.tone}`}>{feedback.text}</div> : null}
@@ -254,15 +305,20 @@ export function AdminDashboardPage() {
                 title="Monitor all recruiting postings"
                 description="This is the admin view across every recruiter-owned job in the system."
                 action={
-                    <button
-                        className="button button--ghost"
-                        onClick={() => {
-                            void jobsQuery.refetch();
-                        }}
-                        type="button"
-                    >
-                        Refresh Jobs
-                    </button>
+                    <div className="section-toolbar">
+                        <button className="button button--ghost" onClick={clearJobFilters} type="button">
+                            Clear Filters
+                        </button>
+                        <button
+                            className="button button--ghost"
+                            onClick={() => {
+                                void jobsQuery.refetch();
+                            }}
+                            type="button"
+                        >
+                            Refresh Jobs
+                        </button>
+                    </div>
                 }
             >
                 <div className="filter-grid">
@@ -302,6 +358,9 @@ export function AdminDashboardPage() {
                         />
                     </div>
                 </div>
+                <p className="field-note field-note--info">
+                    Showing {jobCards.length} jobs{activeFilterCount ? ` with ${activeFilterCount} active filters across the workspace` : ""}.
+                </p>
 
                 {jobsQuery.isLoading ? (
                     <p className="muted-text">Loading admin jobs...</p>
@@ -347,15 +406,20 @@ export function AdminDashboardPage() {
                     title="Enable or disable platform accounts"
                     description="This page uses the lightweight admin user management API already built in the backend."
                     action={
-                        <button
-                            className="button button--ghost"
-                            onClick={() => {
-                                void usersQuery.refetch();
-                            }}
-                            type="button"
-                        >
-                            Refresh Users
-                        </button>
+                        <div className="section-toolbar">
+                            <button className="button button--ghost" onClick={clearUserFilters} type="button">
+                                Clear Filters
+                            </button>
+                            <button
+                                className="button button--ghost"
+                                onClick={() => {
+                                    void usersQuery.refetch();
+                                }}
+                                type="button"
+                            >
+                                Refresh Users
+                            </button>
+                        </div>
                     }
                 >
                     <div className="filter-grid">
@@ -400,6 +464,9 @@ export function AdminDashboardPage() {
                             </select>
                         </div>
                     </div>
+                    <p className="field-note field-note--info">
+                        Showing {userCards.length} users in the current admin view.
+                    </p>
 
                     {usersQuery.isLoading ? (
                         <p className="muted-text">Loading users...</p>
@@ -458,15 +525,20 @@ export function AdminDashboardPage() {
                     title="Audit the key write actions"
                     description="The admin log stream captures job, application, interview, and user status changes."
                     action={
-                        <button
-                            className="button button--ghost"
-                            onClick={() => {
-                                void logsQuery.refetch();
-                            }}
-                            type="button"
-                        >
-                            Refresh Logs
-                        </button>
+                        <div className="section-toolbar">
+                            <button className="button button--ghost" onClick={clearLogFilters} type="button">
+                                Clear Filters
+                            </button>
+                            <button
+                                className="button button--ghost"
+                                onClick={() => {
+                                    void logsQuery.refetch();
+                                }}
+                                type="button"
+                            >
+                                Refresh Logs
+                            </button>
+                        </div>
                     }
                 >
                     <div className="filter-grid">
@@ -516,6 +588,9 @@ export function AdminDashboardPage() {
                             </select>
                         </div>
                     </div>
+                    <p className="field-note field-note--info">
+                        Showing {logCards.length} log entries in the current audit stream.
+                    </p>
 
                     {logsQuery.isLoading ? (
                         <p className="muted-text">Loading operation logs...</p>

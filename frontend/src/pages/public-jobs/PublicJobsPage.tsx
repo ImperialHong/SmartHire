@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { usePublicJobs } from "../../features/jobs/hooks/usePublicJobs";
 import { EmptyState } from "../../shared/components/EmptyState";
@@ -9,6 +11,46 @@ import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
 export function PublicJobsPage() {
     const { session } = useAuth();
     const jobsQuery = usePublicJobs();
+    const [keyword, setKeyword] = useState("");
+    const [cityFilter, setCityFilter] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("");
+    const allJobs = jobsQuery.data?.records || [];
+
+    const cityOptions = useMemo(
+        () => Array.from(new Set(allJobs.flatMap(job => (job.city ? [job.city] : [])))).sort(),
+        [allJobs]
+    );
+    const categoryOptions = useMemo(
+        () => Array.from(new Set(allJobs.flatMap(job => (job.category ? [job.category] : [])))).sort(),
+        [allJobs]
+    );
+    const filteredJobs = useMemo(() => {
+        const normalizedKeyword = keyword.trim().toLowerCase();
+        return allJobs.filter(job => {
+            const matchesKeyword = normalizedKeyword
+                ? [job.title, job.description, job.city, job.category]
+                    .some(value => typeof value === "string" && value.toLowerCase().includes(normalizedKeyword))
+                : true;
+            const matchesCity = cityFilter ? job.city === cityFilter : true;
+            const matchesCategory = categoryFilter ? job.category === categoryFilter : true;
+            return matchesKeyword && matchesCity && matchesCategory;
+        });
+    }, [allJobs, keyword, cityFilter, categoryFilter]);
+    const preferredWorkspace = session
+        ? (session.user.roles.includes("ADMIN")
+            ? "/admin"
+            : session.user.roles.includes("HR")
+                ? "/hr"
+                : session.user.roles.includes("CANDIDATE")
+                    ? "/candidate"
+                    : "/")
+        : null;
+
+    function clearFilters() {
+        setKeyword("");
+        setCityFilter("");
+        setCategoryFilter("");
+    }
 
     return (
         <div className="page-grid">
@@ -27,6 +69,25 @@ export function PublicJobsPage() {
                         <StatusPill tone="info">
                             {session ? `Active session: ${session.user.roles.join(", ")}` : "No active session"}
                         </StatusPill>
+                        {preferredWorkspace && preferredWorkspace !== "/" ? (
+                            <Link className="button button--primary" to={preferredWorkspace}>
+                                Open My Workspace
+                            </Link>
+                        ) : null}
+                    </div>
+                    <div className="hero-summary">
+                        <article className="hero-summary__item">
+                            <span className="hero-summary__label">Open jobs</span>
+                            <strong className="hero-summary__value">{allJobs.length}</strong>
+                        </article>
+                        <article className="hero-summary__item">
+                            <span className="hero-summary__label">Hiring cities</span>
+                            <strong className="hero-summary__value">{cityOptions.length}</strong>
+                        </article>
+                        <article className="hero-summary__item">
+                            <span className="hero-summary__label">Categories</span>
+                            <strong className="hero-summary__value">{categoryOptions.length}</strong>
+                        </article>
                     </div>
                 </div>
                 <div className="callout">
@@ -72,17 +133,67 @@ export function PublicJobsPage() {
                 title="Live job list from the backend API"
                 description="This already queries the current `/api/jobs` endpoint instead of using mock data."
                 action={
-                    <button
-                        className="button button--ghost"
-                        onClick={() => {
-                            void jobsQuery.refetch();
-                        }}
-                        type="button"
-                    >
-                        Refresh
-                    </button>
+                    <div className="section-toolbar">
+                        <button className="button button--ghost" onClick={clearFilters} type="button">
+                            Clear Filters
+                        </button>
+                        <button
+                            className="button button--ghost"
+                            onClick={() => {
+                                void jobsQuery.refetch();
+                            }}
+                            type="button"
+                        >
+                            Refresh
+                        </button>
+                    </div>
                 }
             >
+                <div className="filter-grid">
+                    <div className="form-field">
+                        <label htmlFor="public-job-keyword">Keyword</label>
+                        <input
+                            id="public-job-keyword"
+                            onChange={event => setKeyword(event.target.value)}
+                            placeholder="Search title, city, category, or description"
+                            type="text"
+                            value={keyword}
+                        />
+                    </div>
+                    <div className="form-field">
+                        <label htmlFor="public-job-city">City</label>
+                        <select
+                            id="public-job-city"
+                            onChange={event => setCityFilter(event.target.value)}
+                            value={cityFilter}
+                        >
+                            <option value="">All cities</option>
+                            {cityOptions.map(city => (
+                                <option key={city} value={city}>
+                                    {city}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-field">
+                        <label htmlFor="public-job-category">Category</label>
+                        <select
+                            id="public-job-category"
+                            onChange={event => setCategoryFilter(event.target.value)}
+                            value={categoryFilter}
+                        >
+                            <option value="">All categories</option>
+                            {categoryOptions.map(category => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <p className="field-note field-note--info">
+                    Showing {filteredJobs.length} of {allJobs.length} live jobs
+                </p>
                 {jobsQuery.isLoading ? (
                     <div className="panel">
                         <EmptyState
@@ -97,9 +208,9 @@ export function PublicJobsPage() {
                             description={jobsQuery.error instanceof Error ? jobsQuery.error.message : "Unexpected error"}
                         />
                     </div>
-                ) : jobsQuery.data?.records.length ? (
+                ) : filteredJobs.length ? (
                     <div className="job-grid">
-                        {jobsQuery.data.records.map(job => (
+                        {filteredJobs.map(job => (
                             <article className="job-card" key={job.id}>
                                 <div className="job-card__header">
                                     <div>
@@ -120,8 +231,10 @@ export function PublicJobsPage() {
                     </div>
                 ) : (
                     <EmptyState
-                        title="No open jobs"
-                        description="The public list returned zero records."
+                        title={allJobs.length ? "No jobs match the current filters" : "No open jobs"}
+                        description={allJobs.length
+                            ? "Try clearing one or more filters to widen the search."
+                            : "The public list returned zero records."}
                     />
                 )}
             </SectionCard>

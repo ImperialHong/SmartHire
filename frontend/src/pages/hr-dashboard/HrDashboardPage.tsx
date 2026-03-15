@@ -296,6 +296,14 @@ export function HrDashboardPage() {
     );
 
     const selectedInterview = selectedApplication ? interviewByApplicationId.get(selectedApplication.id) || null : null;
+    const applicationCount = applicationsQuery.data?.records.length || 0;
+    const interviewCount = interviewsQuery.data?.records.length || 0;
+    const hrMetrics = [
+        { label: "Owned jobs", value: ownedJobs.length },
+        { label: "Open jobs", value: ownedJobs.filter(job => job.status === "OPEN").length },
+        { label: "Applicants on selected job", value: selectedJob ? applicationCount : "--" },
+        { label: "Interviews on selected job", value: selectedJob ? interviewCount : "--" }
+    ];
 
     useEffect(() => {
         if (!ownedJobs.length) {
@@ -568,6 +576,22 @@ export function HrDashboardPage() {
                 eyebrow="HR Workspace"
                 title="Manage postings and move applicants forward"
                 description="The React workbench now runs the same HR flow as the backend demo: create jobs, review applications, and schedule interviews."
+                action={
+                    <button
+                        className="button button--ghost"
+                        onClick={() => {
+                            void Promise.all([
+                                statsQuery.refetch(),
+                                jobsQuery.refetch(),
+                                applicationsQuery.refetch(),
+                                interviewsQuery.refetch()
+                            ]);
+                        }}
+                        type="button"
+                    >
+                        Refresh All
+                    </button>
+                }
             >
                 <div className="dashboard-grid dashboard-grid--three">
                     <article className="panel">
@@ -625,9 +649,37 @@ export function HrDashboardPage() {
                         )}
                     </article>
                 </div>
+                <div className="metric-grid">
+                    {hrMetrics.map(metric => (
+                        <article className="metric-card" key={metric.label}>
+                            <span>{metric.label}</span>
+                            <strong>{metric.value}</strong>
+                        </article>
+                    ))}
+                </div>
             </SectionCard>
 
             {feedback ? <div className={`notice notice--${feedback.tone}`}>{feedback.text}</div> : null}
+
+            {selectedJob ? (
+                <div className="dashboard-grid dashboard-grid--three">
+                    <article className="panel panel--soft">
+                        <strong>Selected job</strong>
+                        <p>{selectedJob.title}</p>
+                        <p className="muted-text">{selectedJob.city || "Unknown city"} · {selectedJob.category || "General"}</p>
+                    </article>
+                    <article className="panel panel--soft">
+                        <strong>Status + deadline</strong>
+                        <p>{selectedJob.status}</p>
+                        <p className="muted-text">{formatDateTime(selectedJob.applicationDeadline)}</p>
+                    </article>
+                    <article className="panel panel--soft">
+                        <strong>Pipeline snapshot</strong>
+                        <p>{applicationCount} applicants · {interviewCount} interviews</p>
+                        <p className="muted-text">Keep applications and interview updates moving from this job context.</p>
+                    </article>
+                </div>
+            ) : null}
 
             <div className="dashboard-grid dashboard-grid--two">
                 <SectionCard
