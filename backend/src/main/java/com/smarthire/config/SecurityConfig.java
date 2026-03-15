@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(restAccessDeniedHandler)
             )
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/", "/index.html", "/styles.css", "/app.js").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()

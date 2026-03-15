@@ -22,9 +22,10 @@ cd backend
 mvn spring-boot:run
 ```
 
-3. Open Swagger UI:
+3. Open the lightweight frontend or Swagger UI:
 
 ```text
+http://localhost:8080/
 http://localhost:8080/swagger-ui.html
 ```
 

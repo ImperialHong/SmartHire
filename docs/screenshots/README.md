@@ -38,6 +38,9 @@ Capture these screenshots after importing `sql/002_seed_demo_data.sql` and runni
 12. `12-admin-operation-logs.png`
    Admin operation log list showing key write actions and operator snapshots.
 
+13. `13-frontend-workbench.png`
+   Frontend workbench showing public jobs plus candidate, HR, and admin panels.
+
 Recommended storage rule:
 
 - Put actual screenshot files in this `docs/screenshots/` directory.

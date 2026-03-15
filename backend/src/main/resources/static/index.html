@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartHire</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="background-glow background-glow-left"></div>
+    <div class="background-glow background-glow-right"></div>
+
+    <header class="hero shell">
+        <div class="hero-copy reveal">
+            <p class="eyebrow">Recruiting Workflow Demo</p>
+            <h1>SmartHire turns your backend into a story people can actually feel.</h1>
+            <p class="hero-text">
+                Explore public jobs, then move through candidate, HR, and admin workflows without leaving
+                one page. The frontend talks directly to your Spring Boot APIs on the same origin.
+            </p>
+            <div class="hero-actions">
+                <button class="button button-primary" data-action="load-public-jobs">Refresh Jobs</button>
+                <a class="button button-ghost" href="/swagger-ui.html" target="_blank" rel="noreferrer">
+                    Open Swagger
+                </a>
+            </div>
+            <div class="hero-note">
+                Demo accounts are prefilled for candidate, HR, and admin. Login buttons store tokens locally in the browser.
+            </div>
+        </div>
+        <aside class="hero-panel reveal">
+            <div class="status-tile">
+                <span class="status-label">Current Stage</span>
+                <strong>P1 backend complete</strong>
+                <p>Core workflow, admin tools, logs, Swagger, Docker, and Postman are already in place.</p>
+            </div>
+            <div class="status-tile">
+                <span class="status-label">Frontend Goal</span>
+                <strong>One-page workflow cockpit</strong>
+                <p>Public browsing plus focused role panels for candidate, HR, and admin.</p>
+            </div>
+        </aside>
+    </header>
+
+    <main class="shell">
+        <section class="section reveal">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Public Explore</p>
+                    <h2>Jobs open to everyone</h2>
+                </div>
+                <p class="section-copy">
+                    Select a job here and the candidate or HR panels will use it as the current working context.
+                </p>
+            </div>
+
+            <div class="surface jobs-surface">
+                <form id="job-filter-form" class="job-filters">
+                    <label>
+                        <span>Keyword</span>
+                        <input name="keyword" placeholder="Backend, internship, Java">
+                    </label>
+                    <label>
+                        <span>City</span>
+                        <input name="city" placeholder="Shanghai">
+                    </label>
+                    <label>
+                        <span>Category</span>
+                        <input name="category" placeholder="Engineering">
+                    </label>
+                    <label>
+                        <span>Status</span>
+                        <select name="status">
+                            <option value="">All</option>
+                            <option value="OPEN">OPEN</option>
+                            <option value="CLOSED">CLOSED</option>
+                            <option value="EXPIRED">EXPIRED</option>
+                        </select>
+                    </label>
+                    <button class="button button-secondary" type="submit">Search Jobs</button>
+                </form>
+                <div id="job-summary" class="summary-line">Loading public jobs...</div>
+                <div id="job-list" class="job-list"></div>
+            </div>
+        </section>
+
+        <section class="workspace-grid">
+            <section class="workspace candidate reveal">
+                <div class="workspace-header">
+                    <p class="eyebrow">Candidate</p>
+                    <h2>Apply, track, and stay updated</h2>
+                    <p>Upload a PDF resume, apply to the selected job, and review personal status changes.</p>
+                </div>
+
+                <div class="surface stack">
+                    <div class="auth-box">
+                        <div>
+                            <strong>Demo login</strong>
+                            <p>Uses the seeded candidate account.</p>
+                        </div>
+                        <button class="button button-primary" data-role-login="candidate">Candidate Login</button>
+                    </div>
+
+                    <div id="candidate-profile" class="mini-profile empty-state">
+                        Candidate session not connected yet.
+                    </div>
+
+                    <form id="resume-form" class="stack-form">
+                        <div class="form-head">
+                            <strong>Resume Upload</strong>
+                            <span id="resume-path" class="pill">No resume uploaded yet</span>
+                        </div>
+                        <input id="resume-file" name="file" type="file" accept="application/pdf,.pdf">
+                        <button class="button button-secondary" type="submit">Upload Resume</button>
+                    </form>
+
+                    <form id="candidate-apply-form" class="stack-form">
+                        <div class="form-head">
+                            <strong>Apply to Selected Job</strong>
+                            <span id="selected-job-chip" class="pill pill-highlight">No job selected</span>
+                        </div>
+                        <textarea name="coverLetter" rows="4" placeholder="Write a short cover letter"></textarea>
+                        <button class="button button-secondary" type="submit">Submit Application</button>
+                    </form>
+
+                    <div class="data-stack">
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>My Applications</strong>
+                                <button class="button button-inline" data-action="load-candidate-applications">Refresh</button>
+                            </div>
+                            <div id="candidate-applications" class="record-list"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>My Interviews</strong>
+                                <button class="button button-inline" data-action="load-candidate-interviews">Refresh</button>
+                            </div>
+                            <div id="candidate-interviews" class="record-list"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>My Notifications</strong>
+                                <button class="button button-inline" data-action="load-candidate-notifications">Refresh</button>
+                            </div>
+                            <div id="candidate-notification-meta" class="summary-line"></div>
+                            <div id="candidate-notifications" class="record-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace hr reveal">
+                <div class="workspace-header">
+                    <p class="eyebrow">HR</p>
+                    <h2>Manage jobs and move applicants forward</h2>
+                    <p>Create jobs, review applications on the selected job, and schedule interviews.</p>
+                </div>
+
+                <div class="surface stack">
+                    <div class="auth-box">
+                        <div>
+                            <strong>Demo login</strong>
+                            <p>Uses the seeded HR account.</p>
+                        </div>
+                        <button class="button button-primary" data-role-login="hr">HR Login</button>
+                    </div>
+
+                    <div id="hr-profile" class="mini-profile empty-state">
+                        HR session not connected yet.
+                    </div>
+
+                    <form id="job-create-form" class="stack-form">
+                        <div class="form-head">
+                            <strong>Create or replace selected job context</strong>
+                            <span id="hr-selected-job" class="pill">Current job: none</span>
+                        </div>
+                        <div class="field-grid">
+                            <label>
+                                <span>Title</span>
+                                <input name="title" value="Backend Engineer" required>
+                            </label>
+                            <label>
+                                <span>City</span>
+                                <input name="city" value="Shanghai">
+                            </label>
+                            <label>
+                                <span>Category</span>
+                                <input name="category" value="Engineering">
+                            </label>
+                            <label>
+                                <span>Experience</span>
+                                <select name="experienceLevel">
+                                    <option value="ENTRY">ENTRY</option>
+                                    <option value="JUNIOR" selected>JUNIOR</option>
+                                    <option value="MID">MID</option>
+                                    <option value="SENIOR">SENIOR</option>
+                                </select>
+                            </label>
+                        </div>
+                        <textarea name="description" rows="4" required>Build SmartHire backend services and workflow integrations.</textarea>
+                        <button class="button button-secondary" type="submit">Create Job</button>
+                    </form>
+
+                    <form id="interview-form" class="stack-form">
+                        <div class="form-head">
+                            <strong>Schedule Interview</strong>
+                            <span id="selected-application-chip" class="pill pill-highlight">Application: none</span>
+                        </div>
+                        <div class="field-grid">
+                            <label>
+                                <span>Interview At</span>
+                                <input name="interviewAt" type="datetime-local" required>
+                            </label>
+                            <label>
+                                <span>Location</span>
+                                <input name="location" value="Meeting Room A">
+                            </label>
+                        </div>
+                        <input name="meetingLink" placeholder="https://meet.example.com/smarthire">
+                        <textarea name="remark" rows="3" placeholder="Share prep notes for the candidate"></textarea>
+                        <button class="button button-secondary" type="submit">Schedule Interview</button>
+                    </form>
+
+                    <div class="data-stack">
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>Selected Job Applications</strong>
+                                <button class="button button-inline" data-action="load-hr-applications">Refresh</button>
+                            </div>
+                            <div id="hr-applications" class="record-list"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>Selected Job Interviews</strong>
+                                <button class="button button-inline" data-action="load-hr-interviews">Refresh</button>
+                            </div>
+                            <div id="hr-interviews" class="record-list"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>HR Statistics</strong>
+                                <button class="button button-inline" data-action="load-hr-stats">Refresh</button>
+                            </div>
+                            <div id="hr-stats" class="stats-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="workspace admin reveal">
+                <div class="workspace-header">
+                    <p class="eyebrow">Admin</p>
+                    <h2>See the whole system breathe</h2>
+                    <p>Review global metrics, manage user status, and inspect operation logs.</p>
+                </div>
+
+                <div class="surface stack">
+                    <div class="auth-box">
+                        <div>
+                            <strong>Demo login</strong>
+                            <p>Uses the seeded admin account.</p>
+                        </div>
+                        <button class="button button-primary" data-role-login="admin">Admin Login</button>
+                    </div>
+
+                    <div id="admin-profile" class="mini-profile empty-state">
+                        Admin session not connected yet.
+                    </div>
+
+                    <div class="data-stack">
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>Admin Statistics</strong>
+                                <button class="button button-inline" data-action="load-admin-stats">Refresh</button>
+                            </div>
+                            <div id="admin-stats" class="stats-grid"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>User Management</strong>
+                                <button class="button button-inline" data-action="load-admin-users">Refresh</button>
+                            </div>
+                            <div id="admin-users" class="record-list"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>Operation Logs</strong>
+                                <button class="button button-inline" data-action="load-admin-logs">Refresh</button>
+                            </div>
+                            <div id="admin-logs" class="record-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <script src="/app.js" defer></script>
+</body>
+</html>
