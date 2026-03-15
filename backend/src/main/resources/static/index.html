@@ -80,6 +80,9 @@
                     <button class="button button-secondary" type="submit">Search Jobs</button>
                 </form>
                 <div id="job-summary" class="summary-line">Loading public jobs...</div>
+                <div id="selected-job-overview" class="detail-card empty-state">
+                    Select a job to inspect the current working context.
+                </div>
                 <div id="job-list" class="job-list"></div>
             </div>
         </section>
@@ -98,7 +101,10 @@
                             <strong>Demo login</strong>
                             <p>Uses the seeded candidate account.</p>
                         </div>
-                        <button class="button button-primary" data-role-login="candidate">Candidate Login</button>
+                        <div class="auth-actions">
+                            <button class="button button-primary" data-role-login="candidate">Candidate Login</button>
+                            <button class="button button-ghost" data-role-logout="candidate" disabled>Logout</button>
+                        </div>
                     </div>
 
                     <div id="candidate-profile" class="mini-profile empty-state">
@@ -163,7 +169,10 @@
                             <strong>Demo login</strong>
                             <p>Uses the seeded HR account.</p>
                         </div>
-                        <button class="button button-primary" data-role-login="hr">HR Login</button>
+                        <div class="auth-actions">
+                            <button class="button button-primary" data-role-login="hr">HR Login</button>
+                            <button class="button button-ghost" data-role-logout="hr" disabled>Logout</button>
+                        </div>
                     </div>
 
                     <div id="hr-profile" class="mini-profile empty-state">
@@ -172,8 +181,12 @@
 
                     <form id="job-create-form" class="stack-form">
                         <div class="form-head">
-                            <strong>Create or replace selected job context</strong>
-                            <span id="hr-selected-job" class="pill">Current job: none</span>
+                            <strong>Job Composer</strong>
+                            <span id="job-form-mode" class="pill">Create mode</span>
+                        </div>
+                        <div id="hr-selected-job" class="field-help">Current job: none</div>
+                        <div id="job-editor-note" class="field-help">
+                            Login as HR to create a posting or select one of your own jobs to edit it.
                         </div>
                         <div class="field-grid">
                             <label>
@@ -189,6 +202,15 @@
                                 <input name="category" value="Engineering">
                             </label>
                             <label>
+                                <span>Employment Type</span>
+                                <select name="employmentType">
+                                    <option value="FULL_TIME" selected>FULL_TIME</option>
+                                    <option value="PART_TIME">PART_TIME</option>
+                                    <option value="INTERNSHIP">INTERNSHIP</option>
+                                    <option value="CONTRACT">CONTRACT</option>
+                                </select>
+                            </label>
+                            <label>
                                 <span>Experience</span>
                                 <select name="experienceLevel">
                                     <option value="ENTRY">ENTRY</option>
@@ -197,15 +219,49 @@
                                     <option value="SENIOR">SENIOR</option>
                                 </select>
                             </label>
+                            <label>
+                                <span>Status</span>
+                                <select name="status">
+                                    <option value="OPEN" selected>OPEN</option>
+                                    <option value="CLOSED">CLOSED</option>
+                                    <option value="EXPIRED">EXPIRED</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="field-grid">
+                            <label>
+                                <span>Salary Min</span>
+                                <input name="salaryMin" type="number" min="0" step="1000" value="15000">
+                            </label>
+                            <label>
+                                <span>Salary Max</span>
+                                <input name="salaryMax" type="number" min="0" step="1000" value="25000">
+                            </label>
+                            <label>
+                                <span>Application Deadline</span>
+                                <input name="applicationDeadline" type="datetime-local">
+                            </label>
                         </div>
                         <textarea name="description" rows="4" required>Build SmartHire backend services and workflow integrations.</textarea>
-                        <button class="button button-secondary" type="submit">Create Job</button>
+                        <div class="toolbar-row">
+                            <button class="button button-secondary" type="button" data-action="job-create">Create New Job</button>
+                            <button class="button button-primary" type="button" data-action="job-save">Save Selected Job</button>
+                            <button class="button button-ghost" type="button" data-action="job-reset">Reset Form</button>
+                            <button class="button button-danger" type="button" data-action="job-delete">Delete Selected Job</button>
+                        </div>
                     </form>
 
                     <form id="interview-form" class="stack-form">
                         <div class="form-head">
-                            <strong>Schedule Interview</strong>
+                            <strong>Interview Follow-up</strong>
                             <span id="selected-application-chip" class="pill pill-highlight">Application: none</span>
+                        </div>
+                        <div class="form-head form-head-secondary">
+                            <span id="selected-interview-chip" class="pill">Interview: none</span>
+                            <span id="interview-form-mode" class="pill">Schedule mode</span>
+                        </div>
+                        <div id="interview-editor-note" class="field-help">
+                            Pick an application to schedule a new interview, or click an existing interview to edit it.
                         </div>
                         <div class="field-grid">
                             <label>
@@ -217,9 +273,30 @@
                                 <input name="location" value="Meeting Room A">
                             </label>
                         </div>
+                        <div class="field-grid">
+                            <label>
+                                <span>Status</span>
+                                <select name="status">
+                                    <option value="SCHEDULED" selected>SCHEDULED</option>
+                                    <option value="COMPLETED">COMPLETED</option>
+                                    <option value="CANCELLED">CANCELLED</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Result</span>
+                                <select name="result">
+                                    <option value="PENDING" selected>PENDING</option>
+                                    <option value="PASSED">PASSED</option>
+                                    <option value="FAILED">FAILED</option>
+                                </select>
+                            </label>
+                        </div>
                         <input name="meetingLink" placeholder="https://meet.example.com/smarthire">
                         <textarea name="remark" rows="3" placeholder="Share prep notes for the candidate"></textarea>
-                        <button class="button button-secondary" type="submit">Schedule Interview</button>
+                        <div class="toolbar-row">
+                            <button class="button button-secondary" type="submit">Schedule Interview</button>
+                            <button class="button button-ghost" type="button" data-action="interview-reset">Reset Interview Form</button>
+                        </div>
                     </form>
 
                     <div class="data-stack">
@@ -261,7 +338,10 @@
                             <strong>Demo login</strong>
                             <p>Uses the seeded admin account.</p>
                         </div>
-                        <button class="button button-primary" data-role-login="admin">Admin Login</button>
+                        <div class="auth-actions">
+                            <button class="button button-primary" data-role-login="admin">Admin Login</button>
+                            <button class="button button-ghost" data-role-logout="admin" disabled>Logout</button>
+                        </div>
                     </div>
 
                     <div id="admin-profile" class="mini-profile empty-state">
@@ -281,6 +361,35 @@
                                 <strong>User Management</strong>
                                 <button class="button button-inline" data-action="load-admin-users">Refresh</button>
                             </div>
+                            <form id="admin-user-filter-form" class="compact-form">
+                                <div class="field-grid">
+                                    <label>
+                                        <span>Keyword</span>
+                                        <input name="keyword" placeholder="email or name">
+                                    </label>
+                                    <label>
+                                        <span>Status</span>
+                                        <select name="status">
+                                            <option value="">All</option>
+                                            <option value="ACTIVE">ACTIVE</option>
+                                            <option value="DISABLED">DISABLED</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        <span>Role</span>
+                                        <select name="roleCode">
+                                            <option value="">All</option>
+                                            <option value="CANDIDATE">CANDIDATE</option>
+                                            <option value="HR">HR</option>
+                                            <option value="ADMIN">ADMIN</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <div class="toolbar-row toolbar-row-compact">
+                                    <button class="button button-inline" type="submit">Apply Filters</button>
+                                    <button class="button button-inline" type="button" data-action="reset-admin-users">Reset</button>
+                                </div>
+                            </form>
                             <div id="admin-users" class="record-list"></div>
                         </div>
                         <div class="data-card">
@@ -288,6 +397,42 @@
                                 <strong>Operation Logs</strong>
                                 <button class="button button-inline" data-action="load-admin-logs">Refresh</button>
                             </div>
+                            <form id="admin-log-filter-form" class="compact-form">
+                                <div class="field-grid">
+                                    <label>
+                                        <span>Action</span>
+                                        <select name="action">
+                                            <option value="">All</option>
+                                            <option value="JOB_CREATED">JOB_CREATED</option>
+                                            <option value="JOB_UPDATED">JOB_UPDATED</option>
+                                            <option value="JOB_DELETED">JOB_DELETED</option>
+                                            <option value="APPLICATION_SUBMITTED">APPLICATION_SUBMITTED</option>
+                                            <option value="APPLICATION_STATUS_UPDATED">APPLICATION_STATUS_UPDATED</option>
+                                            <option value="INTERVIEW_SCHEDULED">INTERVIEW_SCHEDULED</option>
+                                            <option value="INTERVIEW_UPDATED">INTERVIEW_UPDATED</option>
+                                            <option value="USER_STATUS_UPDATED">USER_STATUS_UPDATED</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        <span>Target Type</span>
+                                        <select name="targetType">
+                                            <option value="">All</option>
+                                            <option value="JOB">JOB</option>
+                                            <option value="APPLICATION">APPLICATION</option>
+                                            <option value="INTERVIEW">INTERVIEW</option>
+                                            <option value="USER">USER</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        <span>Operator User ID</span>
+                                        <input name="operatorUserId" type="number" min="1" placeholder="e.g. 1">
+                                    </label>
+                                </div>
+                                <div class="toolbar-row toolbar-row-compact">
+                                    <button class="button button-inline" type="submit">Apply Filters</button>
+                                    <button class="button button-inline" type="button" data-action="reset-admin-logs">Reset</button>
+                                </div>
+                            </form>
                             <div id="admin-logs" class="record-list"></div>
                         </div>
                     </div>

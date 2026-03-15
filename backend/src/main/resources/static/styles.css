@@ -243,6 +243,12 @@ h2 {
     border: 1px solid rgba(16, 34, 42, 0.10);
 }
 
+.button-danger {
+    color: #fff7f2;
+    background: linear-gradient(135deg, #b24d36, #8a3424);
+    box-shadow: 0 16px 28px rgba(138, 52, 36, 0.18);
+}
+
 .button-inline {
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.72);
@@ -290,6 +296,46 @@ h2 {
 .jobs-surface {
     display: grid;
     gap: 18px;
+}
+
+.detail-card {
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(16, 34, 42, 0.08);
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+.detail-card h3 {
+    margin: 0;
+    font-size: 1.34rem;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.detail-list {
+    display: grid;
+    gap: 10px;
+}
+
+.detail-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(16, 34, 42, 0.1);
+}
+
+.detail-line:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.detail-line span:first-child {
+    color: var(--ink-700);
 }
 
 .job-filters,
@@ -355,6 +401,21 @@ textarea {
 .job-card.is-selected {
     border-color: rgba(215, 111, 42, 0.34);
     background: linear-gradient(135deg, rgba(255, 245, 230, 0.96), rgba(255, 251, 247, 0.92));
+}
+
+.record-item.is-interactive {
+    cursor: pointer;
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.record-item.is-interactive:hover {
+    transform: translateY(-1px);
+    border-color: rgba(47, 98, 117, 0.22);
+}
+
+.record-item.is-selected {
+    border-color: rgba(79, 151, 134, 0.36);
+    background: linear-gradient(135deg, rgba(243, 251, 248, 0.98), rgba(255, 255, 255, 0.94));
 }
 
 .job-card-top,
@@ -435,6 +496,27 @@ textarea {
     gap: 16px;
 }
 
+.compact-form {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.auth-actions,
+.toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.toolbar-row-compact {
+    justify-content: flex-start;
+}
+
+.form-head-secondary {
+    align-items: center;
+}
+
 .mini-profile {
     padding: 14px 16px;
     border-radius: var(--radius-md);
@@ -499,6 +581,11 @@ textarea {
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.54);
     border: 1px dashed rgba(16, 34, 42, 0.14);
+}
+
+.field-help {
+    font-size: 0.88rem;
+    line-height: 1.5;
 }
 
 .toast {
@@ -594,6 +681,12 @@ textarea {
     .auth-box,
     .form-head {
         align-items: start;
+        flex-direction: column;
+    }
+
+    .auth-actions,
+    .toolbar-row {
+        width: 100%;
         flex-direction: column;
     }
 
