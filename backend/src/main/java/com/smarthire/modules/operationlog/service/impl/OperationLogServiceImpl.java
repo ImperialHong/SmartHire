@@ -69,10 +69,8 @@ public class OperationLogServiceImpl implements OperationLogService {
             query.eq(OperationLogEntity::getOperatorUserId, request.operatorUserId());
         }
 
-        Page<OperationLogEntity> page = operationLogMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<OperationLogEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<OperationLogEntity> page = operationLogMapper.selectPage(pageRequest, query);
         List<OperationLogResponse> records = page.getRecords().stream()
             .map(OperationLogResponse::fromEntity)
             .toList();

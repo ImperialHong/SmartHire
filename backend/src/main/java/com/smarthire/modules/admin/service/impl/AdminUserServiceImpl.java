@@ -79,7 +79,8 @@ public class AdminUserServiceImpl implements AdminUserService {
             query.in(UserEntity::getId, roleFilteredUserIds);
         }
 
-        Page<UserEntity> page = userMapper.selectPage(new Page<>(request.page(), request.size()), query);
+        Page<UserEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<UserEntity> page = userMapper.selectPage(pageRequest, query);
         Map<Long, List<String>> rolesByUserId = loadRoleCodesByUserId(page.getRecords().stream()
             .map(UserEntity::getId)
             .toList());

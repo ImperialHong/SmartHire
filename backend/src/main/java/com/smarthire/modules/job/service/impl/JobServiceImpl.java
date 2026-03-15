@@ -142,7 +142,8 @@ public class JobServiceImpl implements JobService {
             ));
         }
 
-        Page<JobEntity> page = jobMapper.selectPage(new Page<>(request.page(), request.size()), query);
+        Page<JobEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<JobEntity> page = jobMapper.selectPage(pageRequest, query);
         List<JobResponse> records = page.getRecords().stream()
             .map(JobResponse::fromEntity)
             .toList();

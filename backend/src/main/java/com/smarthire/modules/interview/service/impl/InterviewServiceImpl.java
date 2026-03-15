@@ -207,10 +207,8 @@ public class InterviewServiceImpl implements InterviewService {
             query.eq(InterviewEntity::getStatus, normalizeInterviewStatus(request.status()));
         }
 
-        Page<InterviewEntity> page = interviewMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<InterviewEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<InterviewEntity> page = interviewMapper.selectPage(pageRequest, query);
 
         Map<Long, JobEntity> jobsById = loadJobsById(page.getRecords().stream()
             .map(InterviewEntity::getApplicationId)
@@ -260,10 +258,8 @@ public class InterviewServiceImpl implements InterviewService {
             query.eq(InterviewEntity::getStatus, normalizeInterviewStatus(request.status()));
         }
 
-        Page<InterviewEntity> page = interviewMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<InterviewEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<InterviewEntity> page = interviewMapper.selectPage(pageRequest, query);
 
         Map<Long, UserEntity> candidatesById = loadUsersById(page.getRecords().stream()
             .map(InterviewEntity::getApplicationId)

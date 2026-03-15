@@ -49,10 +49,8 @@ public class NotificationServiceImpl implements NotificationService {
             query.eq(NotificationEntity::getRead, request.isRead());
         }
 
-        Page<NotificationEntity> page = notificationMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<NotificationEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<NotificationEntity> page = notificationMapper.selectPage(pageRequest, query);
 
         List<NotificationResponse> records = page.getRecords().stream()
             .map(NotificationResponse::fromEntity)

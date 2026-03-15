@@ -123,10 +123,8 @@ public class ApplicationServiceImpl implements ApplicationService {
             query.eq(ApplicationEntity::getStatus, normalizeStatus(request.status()));
         }
 
-        Page<ApplicationEntity> page = applicationMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<ApplicationEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<ApplicationEntity> page = applicationMapper.selectPage(pageRequest, query);
 
         Map<Long, JobEntity> jobsById = loadJobsById(page.getRecords().stream()
             .map(ApplicationEntity::getJobId)
@@ -161,10 +159,8 @@ public class ApplicationServiceImpl implements ApplicationService {
             query.eq(ApplicationEntity::getStatus, normalizeStatus(request.status()));
         }
 
-        Page<ApplicationEntity> page = applicationMapper.selectPage(
-            new Page<>(request.page(), request.size()),
-            query
-        );
+        Page<ApplicationEntity> pageRequest = new Page<>(request.page(), request.size());
+        Page<ApplicationEntity> page = applicationMapper.selectPage(pageRequest, query);
 
         Map<Long, UserEntity> candidatesById = loadUsersById(page.getRecords().stream()
             .map(ApplicationEntity::getCandidateId)
