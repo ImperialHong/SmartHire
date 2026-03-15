@@ -7,7 +7,7 @@
 
 USE smarthire;
 
-SET NAMES utf8mb4;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SET @demo_password_hash = '$2y$10$UAPEr0pYEkIQbnHMjHfHHujB3c/Z.FoWET3yp/s47zXory/8K8MAO';
 
