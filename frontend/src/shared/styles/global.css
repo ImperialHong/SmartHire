@@ -227,6 +227,10 @@ button {
     align-items: flex-start;
 }
 
+.inline-pills--wrap {
+    align-items: flex-start;
+}
+
 .metric-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
@@ -261,6 +265,12 @@ button {
 .stack-list {
     display: grid;
     gap: 0.85rem;
+}
+
+.filter-grid {
+    display: grid;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
 }
 
 .form-field {
@@ -328,6 +338,11 @@ button {
 
 .panel--soft {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(245, 234, 216, 0.8));
+}
+
+.meta-stack {
+    display: grid;
+    gap: 0.3rem;
 }
 
 .notice {
@@ -469,6 +484,10 @@ button {
     }
 
     .dashboard-grid--three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .filter-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
