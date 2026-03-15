@@ -39,8 +39,8 @@ export function PublicJobsPage() {
                     <p className="eyebrow">Recruiting workflow demo</p>
                     <h2>Build the independent frontend on top of the backend story you already own.</h2>
                     <p className="lead">
-                        This first pass gives us a real React shell, route separation, demo login,
-                        and live job browsing against the Spring Boot API.
+                        The independent React app now has real public browsing, candidate workflow,
+                        and HR workflow wired into the Spring Boot API, with admin next in line.
                     </p>
                     <div className="hero-actions">
                         <a className="button" href={`${getBackendOrigin()}/swagger-ui/index.html`} rel="noreferrer" target="_blank">
@@ -74,25 +74,25 @@ export function PublicJobsPage() {
             <div className="dashboard-grid dashboard-grid--two">
                 <SectionCard
                     eyebrow="Current Focus"
-                    title="What this skeleton already handles"
-                    description="App providers, auth session restore, route guards, shared API client, and independent frontend navigation."
+                    title="What the independent app already handles"
+                    description="Shared auth, route guards, live API queries, and real candidate plus HR actions are now wired in."
                 >
                     <ul className="feature-list">
                         <li>React Router split for public, candidate, HR, and admin pages</li>
                         <li>JWT session persistence backed by the existing `/api/auth` endpoints</li>
                         <li>Vite dev server proxy for local API development on port `5173`</li>
-                        <li>Live public jobs query using React Query</li>
+                        <li>Live public jobs, candidate apply flow, and HR management flow</li>
                     </ul>
                 </SectionCard>
 
                 <SectionCard
                     eyebrow="Next Build"
                     title="Most valuable screens to flesh out next"
-                    description="Candidate apply flow first, then HR editing, then admin oversight."
+                    description="The next highest-value slice is the admin workspace on top of the flows that are already live."
                 >
                     <ul className="feature-list">
-                        <li>Candidate: resume upload, apply, my applications, my notifications</li>
-                        <li>HR: create and edit jobs, review applications, schedule interviews</li>
+                        <li>Candidate: polish error states, filters, and richer timeline presentation</li>
+                        <li>HR: refine form ergonomics and bulk review cues</li>
                         <li>Admin: job oversight, user management, operation logs, overview metrics</li>
                     </ul>
                 </SectionCard>
