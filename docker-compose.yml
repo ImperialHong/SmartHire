@@ -36,5 +36,17 @@ services:
     ports:
       - "8080:8080"
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BACKEND_ORIGIN: http://localhost:8080
+    container_name: smarthire-frontend
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:80"
+
 volumes:
   mysql_data:

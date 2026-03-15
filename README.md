@@ -343,8 +343,14 @@ docker compose up --build
 
 服务默认暴露：
 
+- `http://localhost:5173` - Independent React frontend
 - `http://localhost:8080` - SmartHire backend
 - `localhost:3306` - MySQL
+
+说明：
+
+- `http://localhost:5173` 是独立前端容器，`/api` 会自动反向代理到后端容器
+- `http://localhost:8080` 仍然保留 Spring Boot 同源提供的轻量 workbench
 
 停止服务：
 
