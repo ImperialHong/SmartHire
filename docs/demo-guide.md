@@ -2,7 +2,7 @@
 
 ## Goal
 
-Use one clear story to demonstrate the full SmartHire P0 workflow:
+Use one clear story to demonstrate the full SmartHire workflow:
 
 `candidate login -> browse jobs -> apply -> HR review -> schedule interview -> candidate checks notifications`
 
@@ -63,7 +63,19 @@ Expected talking points:
 - pagination and filtering
 - job status management
 
-### 3. Candidate reviews existing application state
+### 3. Candidate uploads a resume
+
+- Call `POST /api/resumes/upload`
+- Upload a PDF file as multipart form data
+- Keep the returned `filePath` for later application submission
+
+Expected talking points:
+
+- PDF only validation
+- file size limit
+- logical storage path returned to business modules
+
+### 4. Candidate reviews existing application state
 
 - Call `GET /api/applications/me`
 - Show one application in `INTERVIEW`
@@ -74,7 +86,7 @@ Expected talking points:
 - one candidate can apply to one job only once
 - application status flow
 
-### 4. HR login and review applications
+### 5. HR login and review applications
 
 - Login with `hr@example.com`
 - Call `GET /api/jobs/{jobId}/applications`
@@ -85,7 +97,7 @@ Expected talking points:
 - HR can only manage their own jobs
 - recruiter note and state transitions
 
-### 5. Show interview arrangement
+### 6. Show interview arrangement
 
 - Call `GET /api/jobs/{jobId}/interviews`
 - Highlight the scheduled interview for `Candidate User`
@@ -96,7 +108,7 @@ Expected talking points:
 - single interview per application in V1
 - interview scheduling pushes application to `INTERVIEW`
 
-### 6. Candidate checks notifications
+### 7. Candidate checks notifications
 
 - Switch back to the candidate token
 - Call `GET /api/notifications`
@@ -109,25 +121,29 @@ Expected talking points:
 - notification types map to business events
 - unread count and read status support
 
-### 7. Admin quick view
+### 8. Admin quick view
 
 - Login with `admin@example.com`
 - Call `GET /api/notifications`
+- Call `GET /api/statistics/overview`
 
 Expected talking points:
 
 - admin role already provisioned for later expansion
 - current V1 keeps admin lightweight on purpose
+- admin can see global recruiting overview, while HR sees owned-job scope only
 
 ## Recommended Screen Recording Order
 
 1. Swagger home page
 2. Candidate login and `/api/auth/me`
-3. Job list and job detail
-4. Candidate application list
-5. HR application list
-6. Interview list
-7. Candidate notifications
+3. Resume upload response
+4. Job list and job detail
+5. Candidate application list
+6. HR application list
+7. Interview list
+8. Candidate notifications
+9. Admin statistics overview
 
 ## Notes
 

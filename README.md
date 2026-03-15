@@ -5,22 +5,30 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 当前仓库已经完成后端核心流程：
 
 - 候选人注册、登录、查看个人信息
+- 候选人上传 PDF 简历文件
 - HR/管理员发布岗位、修改岗位、删除岗位
 - 候选人查看岗位、投递岗位、防重复投递
 - HR/管理员查看投递并更新状态
 - HR/管理员安排面试、更新面试
 - 站内通知联动投递和面试流程
+- HR/管理员查看基础招聘统计概览
 
 ## 当前阶段
 
-项目目前处于 `P0 核心业务闭环已完成` 阶段，后端主链路已经打通：
+项目目前处于 `P1 基础增强持续补齐` 阶段，`P0` 主业务闭环已经完成，且已经补上部分高价值增强项：
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
-已完成但还可以继续增强的方向：
+已完成的 P1 项包括：
 
 - 简历文件上传
-- 统计面板和后台增强
+- 基础数据统计
+- Docker 与 API 文档入口
+
+已完成但还可以继续增强的方向：
+
+- 管理员轻量后台
+- 基础操作日志
 - Postman 集合或前端联调
 - 真实前端页面与联调截图
 
@@ -67,6 +75,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 ### 3. 投递模块
 
+- `POST /api/resumes/upload`
 - `POST /api/applications`
 - `GET /api/applications/me`
 - `GET /api/jobs/{jobId}/applications`
@@ -74,6 +83,8 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 支持能力：
 
+- 候选人上传 PDF 简历文件
+- 返回可直接写入 `resumeFilePath` 的逻辑路径
 - 候选人投递岗位
 - 同一候选人同一岗位防重复投递
 - HR 查看自己岗位下的投递记录
@@ -105,6 +116,17 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - HR 更新投递状态后，通知候选人
 - HR 安排面试后，通知候选人
 - HR 更新面试后，通知候选人
+
+### 6. 统计模块
+
+- `GET /api/statistics/overview`
+
+支持能力：
+
+- `HR` 查看自己发布岗位范围内的概览统计
+- `ADMIN` 查看全局概览统计
+- 返回岗位、投递、面试三类基础聚合数据
+- 包含投递状态分布、面试状态分布和面试结果分布
 
 ## 仓库结构
 
@@ -166,6 +188,10 @@ mysql -u root -p smarthire < sql/002_seed_demo_data.sql
 | `SERVER_PORT` | `8080` | 服务端口 |
 | `JWT_SECRET` | `smarthire-dev-secret-key-at-least-32-bytes-long` | JWT 密钥 |
 | `JWT_ACCESS_TOKEN_EXPIRATION_SECONDS` | `86400` | Token 过期时间，单位秒 |
+| `RESUME_STORAGE_DIR` | `uploads/resumes` | 简历本地存储目录 |
+| `RESUME_MAX_SIZE_BYTES` | `5242880` | 简历文件大小上限，默认 5 MB |
+| `SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE` | `5MB` | 单文件上传限制 |
+| `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` | `5MB` | 单请求上传限制 |
 
 ### 3. 启动后端
 
@@ -196,8 +222,8 @@ mvn test
 
 当前后端测试结果：
 
-- `40` 个测试通过
-- 覆盖认证、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
+- `52` 个测试通过
+- 覆盖认证、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
 
 ### 5. 使用 Docker Compose 启动
 
@@ -243,11 +269,13 @@ docker compose down -v
 - 查看自己岗位下的投递
 - 更新投递状态
 - 安排和维护面试
+- 查看自己岗位范围内的基础统计
 
 ### ADMIN
 
 - 具备 HR 能力
 - 可跨岗位管理业务数据
+- 可查看全局统计概览
 
 ## 如何创建 HR / ADMIN 账号
 
@@ -282,11 +310,13 @@ WHERE u.email = 'hr@example.com';
 | 认证 | `POST` | `/api/auth/register` | 公开 |
 | 认证 | `POST` | `/api/auth/login` | 公开 |
 | 认证 | `GET` | `/api/auth/me` | 已登录 |
+| 简历 | `POST` | `/api/resumes/upload` | `CANDIDATE` |
 | 岗位 | `GET` | `/api/jobs` | 公开 |
 | 岗位 | `GET` | `/api/jobs/{id}` | 公开 |
 | 岗位 | `POST` | `/api/jobs` | `HR/ADMIN` |
 | 岗位 | `PUT` | `/api/jobs/{id}` | `HR/ADMIN` |
 | 岗位 | `DELETE` | `/api/jobs/{id}` | `HR/ADMIN` |
+| 统计 | `GET` | `/api/statistics/overview` | `HR/ADMIN` |
 | 投递 | `POST` | `/api/applications` | `CANDIDATE` |
 | 投递 | `GET` | `/api/applications/me` | `CANDIDATE` |
 | 投递 | `GET` | `/api/jobs/{jobId}/applications` | `HR/ADMIN` |
@@ -356,9 +386,24 @@ Content-Type: application/json
 
 {
   "jobId": 1,
-  "resumeFilePath": "/resume/candidate-a.pdf",
+  "resumeFilePath": "resumes/1/resume-abc123.pdf",
   "coverLetter": "I am very interested in this role."
 }
+```
+
+### 上传简历
+
+```bash
+curl -X POST http://localhost:8080/api/resumes/upload \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@./resume.pdf;type=application/pdf"
+```
+
+### 查看统计概览
+
+```bash
+curl http://localhost:8080/api/statistics/overview \
+  -H "Authorization: Bearer <token>"
 ```
 
 ### 安排面试
@@ -399,10 +444,10 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 增加简历上传能力
+1. 增加管理员轻量后台能力
 2. 导出 Postman 集合或补更细的接口说明
 3. 接一个轻量前端，把闭环真正跑起来
-4. 继续补管理员视角和基础统计
+4. 补基础操作日志和部署细节
 
 ## 演示资料
 

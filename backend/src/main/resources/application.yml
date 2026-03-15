@@ -6,6 +6,10 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:5MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:5MB}
   jackson:
     time-zone: Asia/Shanghai
 
@@ -34,3 +38,6 @@ app:
   jwt:
     secret: ${JWT_SECRET:smarthire-dev-secret-key-at-least-32-bytes-long}
     access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:86400}
+  storage:
+    resume-dir: ${RESUME_STORAGE_DIR:uploads/resumes}
+    resume-max-size-bytes: ${RESUME_MAX_SIZE_BYTES:5242880}
