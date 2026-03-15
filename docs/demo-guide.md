@@ -127,6 +127,7 @@ Expected talking points:
 ### 8. Admin quick view
 
 - Login with `admin@example.com`
+- Call `GET /api/admin/jobs`
 - Call `GET /api/admin/users`
 - Call `GET /api/admin/operation-logs`
 - Call `GET /api/notifications`
@@ -136,6 +137,7 @@ Expected talking points:
 
 - admin role already provisioned for later expansion
 - current V1 keeps admin lightweight on purpose
+- admin can inspect all jobs across recruiters and do lightweight status control
 - admin can manage user status without building a complex role platform
 - admin can trace key business writes through lightweight operation logs
 - admin can see global recruiting overview, while HR sees owned-job scope only
@@ -150,9 +152,10 @@ Expected talking points:
 6. HR application list
 7. Interview list
 8. Candidate notifications
-9. Admin user list
-10. Admin operation logs
-11. Admin statistics overview
+9. Admin job overview
+10. Admin user list
+11. Admin operation logs
+12. Admin statistics overview
 
 ## Notes
 

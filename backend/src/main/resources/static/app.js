@@ -74,8 +74,10 @@ const dom = {
     hrStats: document.querySelector("#hr-stats"),
     adminProfile: document.querySelector("#admin-profile"),
     adminStats: document.querySelector("#admin-stats"),
+    adminJobs: document.querySelector("#admin-jobs"),
     adminUsers: document.querySelector("#admin-users"),
     adminLogs: document.querySelector("#admin-logs"),
+    adminJobFilterForm: document.querySelector("#admin-job-filter-form"),
     adminUserFilterForm: document.querySelector("#admin-user-filter-form"),
     adminLogFilterForm: document.querySelector("#admin-log-filter-form")
 };
@@ -153,7 +155,11 @@ function bindEvents() {
             });
             showToast("Application submitted.");
             event.currentTarget.reset();
-            await Promise.all([loadCandidateApplications(), loadCandidateNotifications()]);
+            await Promise.all([
+                loadCandidateApplications(),
+                loadCandidateNotifications(),
+                maybeLoadRoleData("admin", loadAdminStats)
+            ]);
         });
     });
 
@@ -200,11 +206,23 @@ function bindEvents() {
     document.querySelector('[data-action="load-admin-stats"]').addEventListener("click", () => {
         loadAdminStats().catch(handleError);
     });
+    document.querySelector('[data-action="load-admin-jobs"]').addEventListener("click", () => {
+        loadAdminJobs(new FormData(dom.adminJobFilterForm)).catch(handleError);
+    });
     document.querySelector('[data-action="load-admin-users"]').addEventListener("click", () => {
         loadAdminUsers(new FormData(dom.adminUserFilterForm)).catch(handleError);
     });
     document.querySelector('[data-action="load-admin-logs"]').addEventListener("click", () => {
         loadAdminLogs(new FormData(dom.adminLogFilterForm)).catch(handleError);
+    });
+
+    dom.adminJobFilterForm.addEventListener("submit", event => {
+        event.preventDefault();
+        loadAdminJobs(new FormData(event.currentTarget)).catch(handleError);
+    });
+    document.querySelector('[data-action="reset-admin-jobs"]').addEventListener("click", () => {
+        dom.adminJobFilterForm.reset();
+        loadAdminJobs(new FormData(dom.adminJobFilterForm)).catch(handleError);
     });
 
     dom.adminUserFilterForm.addEventListener("submit", event => {
@@ -319,6 +337,7 @@ async function loadRoleData(role) {
     if (role === "admin") {
         await Promise.all([
             loadAdminStats(),
+            loadAdminJobs(new FormData(dom.adminJobFilterForm)),
             loadAdminUsers(new FormData(dom.adminUserFilterForm)),
             loadAdminLogs(new FormData(dom.adminLogFilterForm))
         ]);
@@ -432,6 +451,16 @@ async function loadAdminStats() {
     renderStats(dom.adminStats, stats);
 }
 
+async function loadAdminJobs(filterData) {
+    if (!state.sessions.admin.user) {
+        resetAdminWorkspace();
+        return;
+    }
+    const query = buildQuery(filterData || new FormData(dom.adminJobFilterForm), { page: "1", size: "8" });
+    const page = await api(`/api/admin/jobs?${query.toString()}`, { role: "admin" });
+    renderAdminJobList(page.records || []);
+}
+
 async function loadAdminUsers(filterData) {
     if (!state.sessions.admin.user) {
         resetAdminWorkspace();
@@ -466,6 +495,8 @@ async function createJobFromComposer(button) {
         await Promise.all([
             loadPublicJobs(new FormData(dom.jobFilterForm)),
             loadHrStats(),
+            maybeLoadRoleData("admin", loadAdminStats),
+            maybeLoadRoleData("admin", () => loadAdminJobs(new FormData(dom.adminJobFilterForm))),
             maybeLoadRoleData("admin", () => loadAdminLogs(new FormData(dom.adminLogFilterForm)))
         ]);
     });
@@ -490,6 +521,8 @@ async function updateSelectedJobFromComposer(button) {
         await Promise.all([
             loadPublicJobs(new FormData(dom.jobFilterForm)),
             loadHrStats(),
+            maybeLoadRoleData("admin", loadAdminStats),
+            maybeLoadRoleData("admin", () => loadAdminJobs(new FormData(dom.adminJobFilterForm))),
             maybeLoadRoleData("admin", () => loadAdminLogs(new FormData(dom.adminLogFilterForm)))
         ]);
     });
@@ -515,6 +548,8 @@ async function deleteSelectedJob(button) {
         await Promise.all([
             loadPublicJobs(new FormData(dom.jobFilterForm)),
             loadHrStats(),
+            maybeLoadRoleData("admin", loadAdminStats),
+            maybeLoadRoleData("admin", () => loadAdminJobs(new FormData(dom.adminJobFilterForm))),
             maybeLoadRoleData("admin", () => loadAdminLogs(new FormData(dom.adminLogFilterForm)))
         ]);
     });
@@ -567,6 +602,7 @@ async function submitInterviewForm(button) {
             loadHrInterviews(),
             maybeLoadRoleData("candidate", loadCandidateInterviews),
             maybeLoadRoleData("candidate", loadCandidateNotifications),
+            maybeLoadRoleData("admin", loadAdminStats),
             maybeLoadRoleData("admin", () => loadAdminLogs(new FormData(dom.adminLogFilterForm)))
         ]);
     });
@@ -727,6 +763,7 @@ function renderApplicationList(container, records, hrMode) {
                     loadHrApplications(),
                     maybeLoadRoleData("candidate", loadCandidateApplications),
                     maybeLoadRoleData("candidate", loadCandidateNotifications),
+                    maybeLoadRoleData("admin", loadAdminStats),
                     maybeLoadRoleData("admin", () => loadAdminLogs(new FormData(dom.adminLogFilterForm)))
                 ]);
             });
@@ -853,6 +890,84 @@ function renderMapCard(title, mapData) {
     `;
 }
 
+function renderAdminJobList(records) {
+    if (!records.length) {
+        dom.adminJobs.innerHTML = emptyState("No jobs matched the current admin filters.");
+        return;
+    }
+
+    dom.adminJobs.innerHTML = records.map(record => `
+        <article class="record-item">
+            <div class="record-top">
+                <div>
+                    <strong>${escapeHtml(record.title)}</strong>
+                    <div class="tag-row">
+                        <span class="pill">${escapeHtml(record.status)}</span>
+                        <span class="pill">${escapeHtml(record.city || "Unknown city")}</span>
+                        <span class="pill">${escapeHtml(record.category || "General")}</span>
+                        ${record.ownerName ? `<span class="pill">${escapeHtml(record.ownerName)}</span>` : ""}
+                    </div>
+                </div>
+                <span class="pill pill-highlight">${escapeHtml(formatSalaryRange(record))}</span>
+            </div>
+            <p>${escapeHtml(truncateText(record.description || "No description provided.", 180))}</p>
+            <p>${escapeHtml(record.ownerEmail || "Unknown recruiter")} · Recruiter status ${escapeHtml(record.ownerStatus || "N/A")}</p>
+            <p class="field-help">Updated ${escapeHtml(formatDateTime(record.updatedAt) || "N/A")} · Deadline ${escapeHtml(formatDateTime(record.applicationDeadline) || "Not set")}</p>
+            <div class="record-actions">
+                <button class="button-tag" type="button" data-admin-job-focus="${record.id}">Use as Context</button>
+                ${record.status === "OPEN"
+                    ? `<button class="button-tag" type="button" data-admin-job-status="${record.id}:CLOSED" data-tone="warn">Close</button>`
+                    : `<button class="button-tag" type="button" data-admin-job-status="${record.id}:OPEN" data-tone="good">Reopen</button>`}
+            </div>
+        </article>
+    `).join("");
+
+    dom.adminJobs.querySelectorAll("[data-admin-job-focus]").forEach(button => {
+        button.addEventListener("click", async event => {
+            const job = records.find(record => String(record.id) === event.currentTarget.dataset.adminJobFocus);
+            if (!job) {
+                return;
+            }
+            setSelectedJob(job);
+            await Promise.all([
+                maybeLoadRoleData("hr", loadHrApplications),
+                maybeLoadRoleData("hr", loadHrInterviews)
+            ]);
+            showToast(`Admin focused job: ${job.title}`);
+        });
+    });
+
+    dom.adminJobs.querySelectorAll("[data-admin-job-status]").forEach(button => {
+        button.addEventListener("click", async event => {
+            const [jobId, status] = event.currentTarget.dataset.adminJobStatus.split(":");
+            const job = records.find(record => String(record.id) === String(jobId));
+            if (!job) {
+                return;
+            }
+
+            await runBusy(event.currentTarget, "Saving...", async () => {
+                const wasSelected = String(state.selectedJob?.id) === String(job.id);
+                const updated = await api(`/api/jobs/${job.id}`, {
+                    role: "admin",
+                    method: "PUT",
+                    body: JSON.stringify(buildJobPayloadFromRecord(job, { status }))
+                });
+                showToast(`Job #${job.id} moved to ${status}.`);
+                await Promise.all([
+                    loadAdminJobs(new FormData(dom.adminJobFilterForm)),
+                    loadAdminStats(),
+                    loadPublicJobs(new FormData(dom.jobFilterForm)),
+                    maybeLoadRoleData("hr", loadHrStats),
+                    loadAdminLogs(new FormData(dom.adminLogFilterForm))
+                ]);
+                if (wasSelected) {
+                    setSelectedJob(updated);
+                }
+            });
+        });
+    });
+}
+
 function renderUserList(records) {
     if (!records.length) {
         dom.adminUsers.innerHTML = emptyState("No users available for the current filters.");
@@ -892,6 +1007,7 @@ function renderUserList(records) {
                 });
                 showToast(`User status changed to ${status}.`);
                 await Promise.all([
+                    loadAdminJobs(new FormData(dom.adminJobFilterForm)),
                     loadAdminUsers(new FormData(dom.adminUserFilterForm)),
                     loadAdminLogs(new FormData(dom.adminLogFilterForm))
                 ]);
@@ -1118,6 +1234,22 @@ function collectJobPayload() {
     };
 }
 
+function buildJobPayloadFromRecord(job, overrides = {}) {
+    return {
+        title: job.title,
+        description: job.description,
+        city: job.city,
+        category: job.category,
+        employmentType: job.employmentType,
+        experienceLevel: job.experienceLevel,
+        salaryMin: job.salaryMin,
+        salaryMax: job.salaryMax,
+        status: job.status,
+        applicationDeadline: job.applicationDeadline,
+        ...overrides
+    };
+}
+
 function populateJobForm(job) {
     dom.jobComposerForm.querySelector('[name="title"]').value = job.title || "";
     dom.jobComposerForm.querySelector('[name="description"]').value = job.description || "";
@@ -1189,6 +1321,7 @@ function resetHrWorkspace() {
 
 function resetAdminWorkspace() {
     dom.adminStats.innerHTML = emptyState("Login as admin to view global statistics.");
+    dom.adminJobs.innerHTML = emptyState("Login as admin to inspect all jobs.");
     dom.adminUsers.innerHTML = emptyState("Login as admin to manage users.");
     dom.adminLogs.innerHTML = emptyState("Login as admin to inspect operation logs.");
 }

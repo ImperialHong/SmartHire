@@ -329,7 +329,7 @@
                 <div class="workspace-header">
                     <p class="eyebrow">Admin</p>
                     <h2>See the whole system breathe</h2>
-                    <p>Review global metrics, manage user status, and inspect operation logs.</p>
+                    <p>Review global metrics, inspect all jobs, manage user status, and inspect operation logs.</p>
                 </div>
 
                 <div class="surface stack">
@@ -355,6 +355,38 @@
                                 <button class="button button-inline" data-action="load-admin-stats">Refresh</button>
                             </div>
                             <div id="admin-stats" class="stats-grid"></div>
+                        </div>
+                        <div class="data-card">
+                            <div class="card-head">
+                                <strong>Job Overview</strong>
+                                <button class="button button-inline" data-action="load-admin-jobs">Refresh</button>
+                            </div>
+                            <form id="admin-job-filter-form" class="compact-form">
+                                <div class="field-grid">
+                                    <label>
+                                        <span>Keyword</span>
+                                        <input name="keyword" placeholder="title, city, category">
+                                    </label>
+                                    <label>
+                                        <span>Status</span>
+                                        <select name="status">
+                                            <option value="">All</option>
+                                            <option value="OPEN">OPEN</option>
+                                            <option value="CLOSED">CLOSED</option>
+                                            <option value="EXPIRED">EXPIRED</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        <span>Recruiter</span>
+                                        <input name="ownerKeyword" placeholder="email or name">
+                                    </label>
+                                </div>
+                                <div class="toolbar-row toolbar-row-compact">
+                                    <button class="button button-inline" type="submit">Apply Filters</button>
+                                    <button class="button button-inline" type="button" data-action="reset-admin-jobs">Reset</button>
+                                </div>
+                            </form>
+                            <div id="admin-jobs" class="record-list"></div>
                         </div>
                         <div class="data-card">
                             <div class="card-head">
