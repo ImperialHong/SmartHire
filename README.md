@@ -16,6 +16,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 管理员查看基础操作日志
 - 可直接导入 Postman collection 跑完整接口流程
 - Spring Boot 同源提供轻量前端工作台
+- 独立 `frontend/` React 骨架已初始化
 
 ## 当前阶段
 
@@ -31,6 +32,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 管理员轻量后台基础能力
 - 基础操作日志
 - 轻量前端工作台
+- 独立前端工程骨架
 
 已完成但还可以继续增强的方向：
 
@@ -46,6 +48,11 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - MySQL 8
 - JWT
 - Springdoc OpenAPI / Swagger UI
+- React 18
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
 - Maven
 - JUnit 5 + MockMvc + Mockito
 
@@ -181,6 +188,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 ```text
 SmartHire/
 ├── backend/                     # Spring Boot 后端
+├── frontend/                    # 独立前端骨架
 ├── docs/                        # 演示说明与截图清单
 ├── sql/                         # 数据库初始化与种子数据脚本
 ├── docker-compose.yml
@@ -246,6 +254,16 @@ mysql -u root -p smarthire < sql/003_add_operation_logs.sql
 | `SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE` | `5MB` | 单文件上传限制 |
 | `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` | `5MB` | 单请求上传限制 |
 
+独立前端参考环境变量见：
+
+- `frontend/.env.example`
+
+默认开发约定：
+
+- 前端 `5173`
+- 后端 `8080`
+- Vite 本地代理 `/api -> http://localhost:8080`
+
 ### 3. 启动后端
 
 ```bash
@@ -278,7 +296,23 @@ Postman 文件也已经放在仓库里：
 - `docs/postman/SmartHire.local.postman_environment.json`
 - `docs/postman/README.md`
 
-### 4. 运行测试
+### 4. 启动独立前端
+
+如果你要使用独立前端开发：
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+默认访问地址：
+
+```text
+http://localhost:5173
+```
+
+### 5. 运行后端测试
 
 ```bash
 cd backend
@@ -287,10 +321,10 @@ mvn test
 
 当前后端测试结果：
 
-- `68` 个测试通过
+- `74` 个测试通过
 - 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点、前端欢迎页和基础安全规则
 
-### 5. 使用 Docker Compose 启动
+### 6. 使用 Docker Compose 启动
 
 如果你本地已经安装 Docker，也可以直接在项目根目录执行：
 
