@@ -1,8 +1,4 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { DEMO_CREDENTIALS } from "../../features/auth/constants";
-import type { UserRole } from "../../features/auth/types";
 import { usePublicJobs } from "../../features/jobs/hooks/usePublicJobs";
 import { EmptyState } from "../../shared/components/EmptyState";
 import { SectionCard } from "../../shared/components/SectionCard";
@@ -10,27 +6,9 @@ import { StatusPill } from "../../shared/components/StatusPill";
 import { getBackendOrigin } from "../../shared/api/client";
 import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
 
-const destinationByRole: Record<UserRole, string> = {
-    CANDIDATE: "/candidate",
-    HR: "/hr",
-    ADMIN: "/admin"
-};
-
 export function PublicJobsPage() {
-    const navigate = useNavigate();
-    const { loginWithDemoRole, session } = useAuth();
+    const { session } = useAuth();
     const jobsQuery = usePublicJobs();
-    const [activeRole, setActiveRole] = useState<UserRole | null>(null);
-
-    async function handleDemoLogin(role: UserRole) {
-        setActiveRole(role);
-        try {
-            await loginWithDemoRole(role);
-            navigate(destinationByRole[role]);
-        } finally {
-            setActiveRole(null);
-        }
-    }
 
     return (
         <div className="page-grid">
@@ -52,21 +30,12 @@ export function PublicJobsPage() {
                     </div>
                 </div>
                 <div className="callout">
-                    <strong>Seeded demo logins</strong>
-                    <p>Use the same demo accounts that already exist in the backend seed data.</p>
-                    <div className="demo-grid">
-                        {(Object.entries(DEMO_CREDENTIALS) as Array<[UserRole, { email: string }]>).map(([role, credentials]) => (
-                            <button
-                                key={role}
-                                className="button button--primary"
-                                disabled={activeRole === role}
-                                onClick={() => void handleDemoLogin(role)}
-                                type="button"
-                            >
-                                {activeRole === role ? `Signing in ${role}...` : `${role} Demo Login`}
-                                <span className="button__meta">{credentials.email}</span>
-                            </button>
-                        ))}
+                    <strong>Role-based access</strong>
+                    <p>Use the login button in the top bar to enter the candidate or HR workspace with your own account.</p>
+                    <div className="inline-pills inline-pills--wrap">
+                        <StatusPill tone="info">Candidate apply flow</StatusPill>
+                        <StatusPill tone="info">HR review flow</StatusPill>
+                        <StatusPill tone="info">Admin oversight remains available after sign-in</StatusPill>
                     </div>
                 </div>
             </section>

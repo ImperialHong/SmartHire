@@ -1,16 +1,24 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../../app/providers/AuthProvider";
+import { LoginDialog } from "../../features/auth/components/LoginDialog";
 import { StatusPill } from "../components/StatusPill";
 
-const navigationItems = [
-    { to: "/", label: "Public Jobs" },
-    { to: "/candidate", label: "Candidate" },
-    { to: "/hr", label: "HR" },
-    { to: "/admin", label: "Admin" }
-];
+const workspaceItems = [
+    { role: "CANDIDATE", to: "/candidate", label: "Candidate" },
+    { role: "HR", to: "/hr", label: "HR" },
+    { role: "ADMIN", to: "/admin", label: "Admin" }
+] as const;
 
 export function AppLayout() {
     const { session, logout, isHydrating } = useAuth();
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const navigationItems = [
+        { to: "/", label: "Public Jobs" },
+        ...(session
+            ? workspaceItems.filter(item => session.user.roles.includes(item.role))
+            : [])
+    ];
 
     return (
         <div className="app-frame">
@@ -48,7 +56,19 @@ export function AppLayout() {
                             </button>
                         </>
                     ) : (
-                        <StatusPill>Use demo login on the home page</StatusPill>
+                        <>
+                            <div>
+                                <strong>Guest mode</strong>
+                                <p>Sign in to open the candidate or HR workspace.</p>
+                            </div>
+                            <button
+                                className="button button--primary"
+                                onClick={() => setIsLoginOpen(true)}
+                                type="button"
+                            >
+                                Login
+                            </button>
+                        </>
                     )}
                 </div>
             </header>
@@ -56,6 +76,8 @@ export function AppLayout() {
             <main className="page-shell">
                 <Outlet />
             </main>
+
+            <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
         </div>
     );
 }

@@ -1,16 +1,15 @@
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { DEMO_CREDENTIALS } from "../../features/auth/constants";
 import { login } from "../../features/auth/api/login";
 import { getCurrentUser } from "../../features/auth/api/me";
-import type { AuthSession, AuthUser, UserRole } from "../../features/auth/types";
+import type { AuthSession, AuthUser, LoginRequest } from "../../features/auth/types";
 
 const STORAGE_KEY = "smarthire.frontend.session";
 
 interface AuthContextValue {
     session: AuthSession | null;
     isHydrating: boolean;
-    loginWithDemoRole: (role: UserRole) => Promise<AuthSession>;
+    loginWithCredentials: (request: LoginRequest) => Promise<AuthSession>;
     logout: () => void;
 }
 
@@ -88,8 +87,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const value = useMemo<AuthContextValue>(() => ({
         session,
         isHydrating,
-        async loginWithDemoRole(role: UserRole) {
-            const response = await login(DEMO_CREDENTIALS[role]);
+        async loginWithCredentials(request: LoginRequest) {
+            const response = await login(request);
             const nextSession = {
                 token: response.accessToken,
                 user: response.user
