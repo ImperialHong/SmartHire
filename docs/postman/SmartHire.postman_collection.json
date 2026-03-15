@@ -1,0 +1,831 @@
+{
+  "info": {
+    "_postman_id": "41c160ec-3938-470b-ae1f-1f276ef95ed4",
+    "name": "SmartHire",
+    "description": "SmartHire local API collection. Import together with `SmartHire.local.postman_environment.json` to run the candidate, HR, and admin workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/health",
+            "description": "Verify the backend is up before running the workflow."
+          }
+        },
+        {
+          "name": "List Jobs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/jobs?page=1&size={{pageSize}}&status=OPEN",
+            "description": "Public job listing with basic pagination."
+          }
+        },
+        {
+          "name": "Get Job Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}",
+            "description": "Fetch one job by `jobId`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Candidate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{newCandidateEmail}}\",\n  \"password\": \"{{newCandidatePassword}}\",\n  \"fullName\": \"{{newCandidateName}}\",\n  \"phone\": \"{{newCandidatePhone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Optional request for creating a fresh candidate account."
+          }
+        },
+        {
+          "name": "Candidate Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.accessToken) {",
+                  "    pm.environment.set('candidateToken', json.data.accessToken);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\",\n  \"password\": \"{{candidatePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Logs in the seeded candidate and saves `candidateToken`."
+          }
+        },
+        {
+          "name": "HR Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.accessToken) {",
+                  "    pm.environment.set('hrToken', json.data.accessToken);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{hrEmail}}\",\n  \"password\": \"{{hrPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Logs in the seeded HR account and saves `hrToken`."
+          }
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.accessToken) {",
+                  "    pm.environment.set('adminToken', json.data.accessToken);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Logs in the seeded admin account and saves `adminToken`."
+          }
+        },
+        {
+          "name": "Current User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Uses `candidateToken` by default. Switch the token variable manually if you want to inspect HR or admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Candidate Flow",
+      "item": [
+        {
+          "name": "Upload Resume",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.filePath) {",
+                  "    pm.environment.set('resumeFilePath', json.data.filePath);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/resumes/upload",
+            "description": "Select a local PDF file in Postman before sending. Saves `resumeFilePath` on success."
+          }
+        },
+        {
+          "name": "Apply to Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.id) {",
+                  "    pm.environment.set('applicationId', String(json.data.id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jobId\": {{jobId}},\n  \"resumeFilePath\": \"{{resumeFilePath}}\",\n  \"coverLetter\": \"I am very interested in this opportunity.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/applications",
+            "description": "Submits an application and saves `applicationId`."
+          }
+        },
+        {
+          "name": "My Applications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/applications/me?page=1&size={{pageSize}}",
+            "description": "List the current candidate's applications."
+          }
+        },
+        {
+          "name": "My Interviews",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/interviews/me?page=1&size={{pageSize}}",
+            "description": "List scheduled interviews for the current candidate."
+          }
+        },
+        {
+          "name": "My Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const records = (((json || {}).data || {}).records) || [];",
+                  "  if (records.length > 0 && records[0].id) {",
+                  "    pm.environment.set('notificationId', String(records[0].id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notifications?page=1&size={{pageSize}}",
+            "description": "Lists notifications and stores the first `notificationId`."
+          }
+        },
+        {
+          "name": "Unread Notification Count",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notifications/unread-count"
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/notifications/{{notificationId}}/read",
+            "description": "Marks the stored `notificationId` as read."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HR Flow",
+      "item": [
+        {
+          "name": "Create Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.id) {",
+                  "    pm.environment.set('jobId', String(json.data.id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Backend Engineer\",\n  \"description\": \"Build SmartHire backend services.\",\n  \"city\": \"Shanghai\",\n  \"category\": \"Engineering\",\n  \"employmentType\": \"FULL_TIME\",\n  \"experienceLevel\": \"JUNIOR\",\n  \"salaryMin\": 15000,\n  \"salaryMax\": 25000,\n  \"status\": \"OPEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/jobs",
+            "description": "Creates a job and stores `jobId`."
+          }
+        },
+        {
+          "name": "Update Job",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Backend Engineer\",\n  \"description\": \"Build SmartHire backend services and workflows.\",\n  \"city\": \"Shanghai\",\n  \"category\": \"Engineering\",\n  \"employmentType\": \"FULL_TIME\",\n  \"experienceLevel\": \"MID\",\n  \"salaryMin\": 18000,\n  \"salaryMax\": 28000,\n  \"status\": \"OPEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}"
+          }
+        },
+        {
+          "name": "List Job Applications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const records = (((json || {}).data || {}).records) || [];",
+                  "  if (records.length > 0 && records[0].id) {",
+                  "    pm.environment.set('applicationId', String(records[0].id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}/applications?page=1&size={{pageSize}}",
+            "description": "Lists job applications and stores the first `applicationId`."
+          }
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REVIEWING\",\n  \"hrNote\": \"Looks promising, move to the next step.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/applications/{{applicationId}}/status"
+          }
+        },
+        {
+          "name": "Schedule Interview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json && json.data && json.data.id) {",
+                  "    pm.environment.set('interviewId', String(json.data.id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": {{applicationId}},\n  \"interviewAt\": \"{{nextInterviewAt}}\",\n  \"location\": \"Meeting Room A\",\n  \"meetingLink\": \"https://meet.example.com/smarthire\",\n  \"remark\": \"Please prepare a short project introduction.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/interviews",
+            "description": "Schedules an interview and stores `interviewId`."
+          }
+        },
+        {
+          "name": "Update Interview",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"result\": \"PASSED\",\n  \"remark\": \"Strong communication and solid backend fundamentals.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/interviews/{{interviewId}}"
+          }
+        },
+        {
+          "name": "List Job Interviews",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const records = (((json || {}).data || {}).records) || [];",
+                  "  if (records.length > 0 && records[0].id) {",
+                  "    pm.environment.set('interviewId', String(records[0].id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/jobs/{{jobId}}/interviews?page=1&size={{pageSize}}"
+          }
+        },
+        {
+          "name": "HR Statistics Overview",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{hrToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/statistics/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Flow",
+      "item": [
+        {
+          "name": "Admin Statistics Overview",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/statistics/overview"
+          }
+        },
+        {
+          "name": "List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const records = (((json || {}).data || {}).records) || [];",
+                  "  const managedUser = records.find(item => !(item.roles || []).includes('ADMIN'));",
+                  "  if (managedUser && managedUser.id) {",
+                  "    pm.environment.set('userId', String(managedUser.id));",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/users?page=1&size={{pageSize}}",
+            "description": "Lists users and stores the first non-admin `userId`."
+          }
+        },
+        {
+          "name": "Disable User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DISABLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/status"
+          }
+        },
+        {
+          "name": "Enable User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/status"
+          }
+        },
+        {
+          "name": "Operation Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/operation-logs?page=1&size={{pageSize}}",
+            "description": "Lists recent operation logs across jobs, applications, interviews, and admin actions."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -28,6 +28,8 @@ mvn spring-boot:run
 http://localhost:8080/swagger-ui.html
 ```
 
+You can also import the Postman files under `docs/postman/` if you prefer to demo with Postman instead of Swagger.
+
 ## Demo Accounts
 
 | Role | Email | Password |

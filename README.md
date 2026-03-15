@@ -14,6 +14,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - HR/管理员查看基础招聘统计概览
 - 管理员分页查看用户并启用/禁用账号
 - 管理员查看基础操作日志
+- 可直接导入 Postman collection 跑完整接口流程
 
 ## 当前阶段
 
@@ -31,7 +32,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 已完成但还可以继续增强的方向：
 
-- Postman 集合或前端联调
+- 轻量前端联调
 - 真实前端页面与联调截图
 
 ## 技术栈
@@ -242,6 +243,12 @@ Swagger / OpenAPI 文档地址：
 http://localhost:8080/swagger-ui.html
 http://localhost:8080/v3/api-docs
 ```
+
+Postman 文件也已经放在仓库里：
+
+- `docs/postman/SmartHire.postman_collection.json`
+- `docs/postman/SmartHire.local.postman_environment.json`
+- `docs/postman/README.md`
 
 ### 4. 运行测试
 
@@ -504,10 +511,10 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 导出 Postman 集合或补更细的接口说明
-2. 接一个轻量前端，把闭环真正跑起来
-3. 继续补管理员岗位视图
-4. 打磨部署细节或补异步能力
+1. 接一个轻量前端，把闭环真正跑起来
+2. 继续补管理员岗位视图
+3. 打磨部署细节或补异步能力
+4. 生成演示截图或录屏材料
 
 ## 演示资料
 
