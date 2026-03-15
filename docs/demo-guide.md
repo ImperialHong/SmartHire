@@ -125,6 +125,7 @@ Expected talking points:
 
 - Login with `admin@example.com`
 - Call `GET /api/admin/users`
+- Call `GET /api/admin/operation-logs`
 - Call `GET /api/notifications`
 - Call `GET /api/statistics/overview`
 
@@ -133,6 +134,7 @@ Expected talking points:
 - admin role already provisioned for later expansion
 - current V1 keeps admin lightweight on purpose
 - admin can manage user status without building a complex role platform
+- admin can trace key business writes through lightweight operation logs
 - admin can see global recruiting overview, while HR sees owned-job scope only
 
 ## Recommended Screen Recording Order
@@ -146,7 +148,8 @@ Expected talking points:
 7. Interview list
 8. Candidate notifications
 9. Admin user list
-10. Admin statistics overview
+10. Admin operation logs
+11. Admin statistics overview
 
 ## Notes
 

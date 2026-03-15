@@ -13,6 +13,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 站内通知联动投递和面试流程
 - HR/管理员查看基础招聘统计概览
 - 管理员分页查看用户并启用/禁用账号
+- 管理员查看基础操作日志
 
 ## 当前阶段
 
@@ -26,10 +27,10 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 基础数据统计
 - Docker 与 API 文档入口
 - 管理员轻量后台基础能力
+- 基础操作日志
 
 已完成但还可以继续增强的方向：
 
-- 基础操作日志
 - Postman 集合或前端联调
 - 真实前端页面与联调截图
 
@@ -141,6 +142,17 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 返回用户角色、状态、最近登录时间
 - 支持启用 / 禁用账号
 
+### 8. 操作日志模块
+
+- `GET /api/admin/operation-logs`
+
+支持能力：
+
+- 管理员查看系统关键写操作日志
+- 支持按动作、目标类型、操作者筛选
+- 记录操作者快照、目标对象和简要摘要
+- 当前覆盖岗位、投递、面试、用户状态等关键写操作
+
 ## 仓库结构
 
 ```text
@@ -172,6 +184,7 @@ mysql -u root -p smarthire < sql/001_init_schema.sql
 
 ```bash
 mysql -u root -p smarthire < sql/002_seed_demo_data.sql
+mysql -u root -p smarthire < sql/003_add_operation_logs.sql
 ```
 
 `001` 会初始化：
@@ -184,6 +197,10 @@ mysql -u root -p smarthire < sql/002_seed_demo_data.sql
 - 演示账号
 - 演示岗位
 - 演示投递、面试与通知数据
+
+`003` 会初始化：
+
+- 管理员可查看的操作日志表
 
 ### 2. 配置环境变量
 
@@ -235,8 +252,8 @@ mvn test
 
 当前后端测试结果：
 
-- `60` 个测试通过
-- 覆盖认证、管理员用户管理、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
+- `66` 个测试通过
+- 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点和基础安全规则
 
 ### 5. 使用 Docker Compose 启动
 
@@ -246,7 +263,7 @@ mvn test
 docker compose up --build
 ```
 
-首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql` 和 `sql/002_seed_demo_data.sql`。
+首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql`、`sql/002_seed_demo_data.sql` 和 `sql/003_add_operation_logs.sql`。
 
 服务默认暴露：
 
@@ -290,6 +307,7 @@ docker compose down -v
 - 可跨岗位管理业务数据
 - 可查看全局统计概览
 - 可分页查看全部用户并调整账号状态
+- 可查看关键业务操作日志
 
 ## 如何创建 HR / ADMIN 账号
 
@@ -333,6 +351,7 @@ WHERE u.email = 'hr@example.com';
 | 统计 | `GET` | `/api/statistics/overview` | `HR/ADMIN` |
 | 管理员 | `GET` | `/api/admin/users` | `ADMIN` |
 | 管理员 | `PATCH` | `/api/admin/users/{id}/status` | `ADMIN` |
+| 日志 | `GET` | `/api/admin/operation-logs` | `ADMIN` |
 | 投递 | `POST` | `/api/applications` | `CANDIDATE` |
 | 投递 | `GET` | `/api/applications/me` | `CANDIDATE` |
 | 投递 | `GET` | `/api/jobs/{jobId}/applications` | `HR/ADMIN` |
@@ -438,6 +457,13 @@ curl -X PATCH http://localhost:8080/api/admin/users/2/status \
   -d '{"status":"DISABLED"}'
 ```
 
+### 查看操作日志
+
+```bash
+curl "http://localhost:8080/api/admin/operation-logs?page=1&size=10&targetType=USER" \
+  -H "Authorization: Bearer <admin-token>"
+```
+
 ### 安排面试
 
 ```http
@@ -472,15 +498,16 @@ Content-Type: application/json
 - 每个申请当前只允许一条面试记录
 - 通知表支持未读统计和已读状态更新
 - 管理员可直接控制用户状态为 `ACTIVE / DISABLED`
+- 管理员可查看关键写操作的审计日志
 
 ## 下一步建议
 
 如果继续往下做，最值得补的顺序是：
 
-1. 补基础操作日志
-2. 导出 Postman 集合或补更细的接口说明
-3. 接一个轻量前端，把闭环真正跑起来
-4. 继续补管理员岗位视图或部署细节
+1. 导出 Postman 集合或补更细的接口说明
+2. 接一个轻量前端，把闭环真正跑起来
+3. 继续补管理员岗位视图
+4. 打磨部署细节或补异步能力
 
 ## 演示资料
 

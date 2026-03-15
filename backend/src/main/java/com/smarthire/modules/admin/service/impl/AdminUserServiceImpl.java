@@ -15,6 +15,7 @@ import com.smarthire.modules.auth.mapper.RoleMapper;
 import com.smarthire.modules.auth.mapper.UserMapper;
 import com.smarthire.modules.auth.mapper.UserRoleMapper;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -35,15 +36,18 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final UserMapper userMapper;
     private final UserRoleMapper userRoleMapper;
     private final RoleMapper roleMapper;
+    private final OperationLogService operationLogService;
 
     public AdminUserServiceImpl(
         UserMapper userMapper,
         UserRoleMapper userRoleMapper,
-        RoleMapper roleMapper
+        RoleMapper roleMapper,
+        OperationLogService operationLogService
     ) {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.roleMapper = roleMapper;
+        this.operationLogService = operationLogService;
     }
 
     @Override
@@ -114,6 +118,13 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setStatus(normalizedStatus);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        operationLogService.record(
+            currentUser,
+            "USER_STATUS_UPDATED",
+            "USER",
+            user.getId(),
+            "Updated user status to " + user.getStatus() + " for " + user.getEmail()
+        );
 
         Map<Long, List<String>> rolesByUserId = loadRoleCodesByUserId(List.of(userId));
         return AdminUserResponse.fromUserEntity(user, rolesByUserId.getOrDefault(userId, List.of()));

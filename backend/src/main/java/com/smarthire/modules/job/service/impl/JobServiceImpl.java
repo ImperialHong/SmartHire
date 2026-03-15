@@ -13,6 +13,7 @@ import com.smarthire.modules.job.dto.response.JobResponse;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
 import com.smarthire.modules.job.service.JobService;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,9 +34,11 @@ public class JobServiceImpl implements JobService {
         Set.of("OPEN", "CLOSED", "EXPIRED");
 
     private final JobMapper jobMapper;
+    private final OperationLogService operationLogService;
 
-    public JobServiceImpl(JobMapper jobMapper) {
+    public JobServiceImpl(JobMapper jobMapper, OperationLogService operationLogService) {
         this.jobMapper = jobMapper;
+        this.operationLogService = operationLogService;
     }
 
     @Override
@@ -51,6 +54,13 @@ public class JobServiceImpl implements JobService {
         job.setUpdatedAt(now);
         applyRequest(job, request);
         jobMapper.insert(job);
+        operationLogService.record(
+            currentUser,
+            "JOB_CREATED",
+            "JOB",
+            job.getId(),
+            "Created job " + job.getTitle()
+        );
 
         return JobResponse.fromEntity(job);
     }
@@ -67,6 +77,13 @@ public class JobServiceImpl implements JobService {
         applyRequest(existingJob, request);
         existingJob.setUpdatedAt(LocalDateTime.now());
         jobMapper.updateById(existingJob);
+        operationLogService.record(
+            currentUser,
+            "JOB_UPDATED",
+            "JOB",
+            existingJob.getId(),
+            "Updated job " + existingJob.getTitle()
+        );
 
         return JobResponse.fromEntity(existingJob);
     }
@@ -80,6 +97,13 @@ public class JobServiceImpl implements JobService {
         validateOwnership(currentUser, existingJob);
 
         jobMapper.deleteById(jobId);
+        operationLogService.record(
+            currentUser,
+            "JOB_DELETED",
+            "JOB",
+            existingJob.getId(),
+            "Deleted job " + existingJob.getTitle()
+        );
     }
 
     @Override

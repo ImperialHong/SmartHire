@@ -19,6 +19,7 @@ import com.smarthire.modules.interview.service.InterviewService;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
 import com.smarthire.modules.notification.service.NotificationService;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,19 +47,22 @@ public class InterviewServiceImpl implements InterviewService {
     private final JobMapper jobMapper;
     private final UserMapper userMapper;
     private final NotificationService notificationService;
+    private final OperationLogService operationLogService;
 
     public InterviewServiceImpl(
         InterviewMapper interviewMapper,
         ApplicationMapper applicationMapper,
         JobMapper jobMapper,
         UserMapper userMapper,
-        NotificationService notificationService
+        NotificationService notificationService,
+        OperationLogService operationLogService
     ) {
         this.interviewMapper = interviewMapper;
         this.applicationMapper = applicationMapper;
         this.jobMapper = jobMapper;
         this.userMapper = userMapper;
         this.notificationService = notificationService;
+        this.operationLogService = operationLogService;
     }
 
     @Override
@@ -114,6 +118,13 @@ public class InterviewServiceImpl implements InterviewService {
             "INTERVIEW",
             interview.getId()
         );
+        operationLogService.record(
+            currentUser,
+            "INTERVIEW_SCHEDULED",
+            "INTERVIEW",
+            interview.getId(),
+            "Scheduled interview for job " + job.getTitle()
+        );
         return InterviewResponse.from(interview, application, job, candidate);
     }
 
@@ -160,6 +171,13 @@ public class InterviewServiceImpl implements InterviewService {
             "Your interview for " + job.getTitle() + " has been updated",
             "INTERVIEW",
             interview.getId()
+        );
+        operationLogService.record(
+            currentUser,
+            "INTERVIEW_UPDATED",
+            "INTERVIEW",
+            interview.getId(),
+            "Updated interview for job " + job.getTitle()
         );
         return InterviewResponse.from(interview, application, job, candidate);
     }

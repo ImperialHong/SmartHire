@@ -17,6 +17,7 @@ import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
 import com.smarthire.modules.notification.service.NotificationService;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -40,17 +41,20 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobMapper jobMapper;
     private final UserMapper userMapper;
     private final NotificationService notificationService;
+    private final OperationLogService operationLogService;
 
     public ApplicationServiceImpl(
         ApplicationMapper applicationMapper,
         JobMapper jobMapper,
         UserMapper userMapper,
-        NotificationService notificationService
+        NotificationService notificationService,
+        OperationLogService operationLogService
     ) {
         this.applicationMapper = applicationMapper;
         this.jobMapper = jobMapper;
         this.userMapper = userMapper;
         this.notificationService = notificationService;
+        this.operationLogService = operationLogService;
     }
 
     @Override
@@ -93,6 +97,13 @@ public class ApplicationServiceImpl implements ApplicationService {
             currentUser.fullName() + " applied for " + job.getTitle(),
             "APPLICATION",
             application.getId()
+        );
+        operationLogService.record(
+            currentUser,
+            "APPLICATION_SUBMITTED",
+            "APPLICATION",
+            application.getId(),
+            "Submitted application for job " + job.getTitle()
         );
 
         return ApplicationResponse.forCandidate(application, job);
@@ -208,6 +219,13 @@ public class ApplicationServiceImpl implements ApplicationService {
                 application.getId()
             );
         }
+        operationLogService.record(
+            currentUser,
+            "APPLICATION_STATUS_UPDATED",
+            "APPLICATION",
+            application.getId(),
+            "Updated application status to " + application.getStatus() + " for job " + job.getTitle()
+        );
         return ApplicationResponse.forHr(application, job, candidate);
     }
 

@@ -16,6 +16,7 @@ import com.smarthire.modules.job.dto.response.JobResponse;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
 import com.smarthire.modules.job.service.impl.JobServiceImpl;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,9 @@ class JobServiceImplTests {
 
     @Mock
     private JobMapper jobMapper;
+
+    @Mock
+    private OperationLogService operationLogService;
 
     @InjectMocks
     private JobServiceImpl jobService;

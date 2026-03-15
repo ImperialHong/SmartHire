@@ -21,6 +21,7 @@ import com.smarthire.modules.auth.mapper.RoleMapper;
 import com.smarthire.modules.auth.mapper.UserMapper;
 import com.smarthire.modules.auth.mapper.UserRoleMapper;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,9 @@ class AdminUserServiceImplTests {
 
     @Mock
     private RoleMapper roleMapper;
+
+    @Mock
+    private OperationLogService operationLogService;
 
     @InjectMocks
     private AdminUserServiceImpl adminUserService;

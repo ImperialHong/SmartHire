@@ -23,6 +23,7 @@ import com.smarthire.modules.interview.service.impl.InterviewServiceImpl;
 import com.smarthire.modules.job.entity.JobEntity;
 import com.smarthire.modules.job.mapper.JobMapper;
 import com.smarthire.modules.notification.service.NotificationService;
+import com.smarthire.modules.operationlog.service.OperationLogService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class InterviewServiceImplTests {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private OperationLogService operationLogService;
 
     @InjectMocks
     private InterviewServiceImpl interviewService;
