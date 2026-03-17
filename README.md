@@ -20,7 +20,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 
 ## 当前阶段
 
-项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成第一阶段 Redis 缓存，下一步进入 RabbitMQ 等工程亮点增强`。
+项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis 缓存与 RabbitMQ 异步通知第一阶段，下一步进入定时任务等工程亮点增强`。
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
@@ -32,13 +32,13 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 管理员轻量后台基础能力
 - 基础操作日志
 - Redis 缓存公共岗位与统计概览
+- RabbitMQ 异步通知链路
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
 - `docker compose` 下的独立前端容器化部署
 
 已完成但还可以继续增强的方向：
 
-- RabbitMQ 异步通知链路
 - 定时任务关闭过期岗位或发送提醒
 - 更细的统计图表与后台可视化
 - CI/CD 或自动化部署校验
@@ -51,6 +51,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - MyBatis-Plus
 - MySQL 8
 - Redis
+- RabbitMQ
 - JWT
 - Springdoc OpenAPI / Swagger UI
 - React 18
@@ -134,6 +135,12 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - HR 更新投递状态后，通知候选人
 - HR 安排面试后，通知候选人
 - HR 更新面试后，通知候选人
+
+实现方式：
+
+- 应用、投递状态、面试相关事件在事务提交后发布到 RabbitMQ
+- 通知消费者异步落库到 `notifications`
+- 消息消费使用 `event_key` 做幂等去重
 
 ### 6. 统计模块
 
@@ -223,6 +230,7 @@ mysql -u root -p smarthire < sql/001_init_schema.sql
 ```bash
 mysql -u root -p smarthire < sql/002_seed_demo_data.sql
 mysql -u root -p smarthire < sql/003_add_operation_logs.sql
+mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 ```
 
 `001` 会初始化：
@@ -240,6 +248,10 @@ mysql -u root -p smarthire < sql/003_add_operation_logs.sql
 
 - 管理员可查看的操作日志表
 
+`004` 会初始化：
+
+- RabbitMQ 异步通知使用的通知事件幂等键
+
 ### 2. 配置环境变量
 
 本地开发建议使用 `JDK 21`。
@@ -255,6 +267,10 @@ mysql -u root -p smarthire < sql/003_add_operation_logs.sql
 | `DB_PASSWORD` | `root` | 数据库密码 |
 | `REDIS_HOST` | `localhost` | Redis 地址 |
 | `REDIS_PORT` | `6379` | Redis 端口 |
+| `RABBITMQ_HOST` | `localhost` | RabbitMQ 地址 |
+| `RABBITMQ_PORT` | `5672` | RabbitMQ AMQP 端口 |
+| `RABBITMQ_USERNAME` | `guest` | RabbitMQ 用户名 |
+| `RABBITMQ_PASSWORD` | `guest` | RabbitMQ 密码 |
 | `SPRING_CACHE_TYPE` | `redis` | Spring Cache 类型 |
 | `SERVER_PORT` | `8080` | 服务端口 |
 | `JWT_SECRET` | `smarthire-dev-secret-key-at-least-32-bytes-long` | JWT 密钥 |
@@ -338,8 +354,8 @@ mvn test
 
 当前后端测试结果：
 
-- `77` 个测试通过
-- 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点、前端欢迎页和基础安全规则
+- `82` 个测试通过
+- 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、Swagger 文档端点、前端欢迎页和基础安全规则
 
 ### 6. 使用 Docker Compose 启动
 
@@ -349,7 +365,12 @@ mvn test
 docker compose up --build
 ```
 
-首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql`、`sql/002_seed_demo_data.sql` 和 `sql/003_add_operation_logs.sql`。
+首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql`、`sql/002_seed_demo_data.sql`、`sql/003_add_operation_logs.sql` 和 `sql/004_add_notification_event_key.sql`。
+
+如果你之前已经启动过旧版本的 MySQL volume，需要二选一：
+
+- 手动执行 `sql/004_add_notification_event_key.sql`
+- 或者运行 `docker compose down -v` 后重新初始化数据库
 
 服务默认暴露：
 
@@ -357,6 +378,8 @@ docker compose up --build
 - `http://localhost:8080` - SmartHire backend
 - `localhost:3306` - MySQL
 - `localhost:6379` - Redis
+- `localhost:5672` - RabbitMQ AMQP
+- `http://localhost:15672` - RabbitMQ Management UI
 
 说明：
 
@@ -590,6 +613,7 @@ Content-Type: application/json
 - 同一候选人同一岗位只能投递一次
 - 每个申请当前只允许一条面试记录
 - 通知表支持未读统计和已读状态更新
+- 通知表通过 `event_key` 支撑 RabbitMQ 消费幂等
 - 管理员可直接控制用户状态为 `ACTIVE / DISABLED`
 - 管理员可查看关键写操作的审计日志
 
@@ -597,10 +621,10 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 先做 RabbitMQ，把通知从同步调用改成异步链路
-2. 再做定时任务，比如自动关闭过期岗位或发送面试提醒
-3. 继续补更细的统计图表或管理员可视化视图
-4. 最后再考虑 CI/CD 或自动化部署校验
+1. 先做定时任务，比如自动关闭过期岗位或发送面试提醒
+2. 再补更细的统计图表或管理员可视化视图
+3. 继续补 CI/CD 或自动化部署校验
+4. 最后视情况补邮件 / 短信等通知扩展消费者
 
 ## 补充资料
 

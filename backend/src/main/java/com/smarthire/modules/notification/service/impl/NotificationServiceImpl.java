@@ -9,17 +9,28 @@ import com.smarthire.modules.notification.dto.request.NotificationListRequest;
 import com.smarthire.modules.notification.dto.response.NotificationResponse;
 import com.smarthire.modules.notification.entity.NotificationEntity;
 import com.smarthire.modules.notification.mapper.NotificationMapper;
+import com.smarthire.modules.notification.messaging.NotificationEventKeyFactory;
+import com.smarthire.modules.notification.messaging.NotificationMessage;
+import com.smarthire.modules.notification.messaging.NotificationMessagePublisher;
+import com.smarthire.modules.notification.service.NotificationPersistenceService;
 import com.smarthire.modules.notification.service.NotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     private static final Set<String> NOTIFICATION_TYPES = Set.of(
         "APPLICATION_SUBMITTED",
@@ -31,8 +42,18 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationMapper notificationMapper;
 
-    public NotificationServiceImpl(NotificationMapper notificationMapper) {
+    private final NotificationMessagePublisher notificationMessagePublisher;
+
+    private final NotificationPersistenceService notificationPersistenceService;
+
+    public NotificationServiceImpl(
+        NotificationMapper notificationMapper,
+        NotificationMessagePublisher notificationMessagePublisher,
+        NotificationPersistenceService notificationPersistenceService
+    ) {
         this.notificationMapper = notificationMapper;
+        this.notificationMessagePublisher = notificationMessagePublisher;
+        this.notificationPersistenceService = notificationPersistenceService;
     }
 
     @Override
@@ -46,7 +67,7 @@ public class NotificationServiceImpl implements NotificationService {
             .eq(NotificationEntity::getRecipientUserId, currentUser.userId())
             .orderByDesc(NotificationEntity::getCreatedAt);
         if (request.isRead() != null) {
-            query.eq(NotificationEntity::getRead, request.isRead());
+            query.eq(NotificationEntity::getReadFlag, request.isRead());
         }
 
         Page<NotificationEntity> pageRequest = new Page<>(request.page(), request.size());
@@ -66,7 +87,7 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationMapper.selectCount(
             Wrappers.<NotificationEntity>lambdaQuery()
                 .eq(NotificationEntity::getRecipientUserId, currentUser.userId())
-                .eq(NotificationEntity::getRead, false)
+                .eq(NotificationEntity::getReadFlag, false)
         );
     }
 
@@ -76,12 +97,12 @@ public class NotificationServiceImpl implements NotificationService {
         validateAuthenticated(currentUser);
 
         NotificationEntity notification = getOwnedNotification(currentUser, notificationId);
-        if (Boolean.TRUE.equals(notification.getRead())) {
+        if (Boolean.TRUE.equals(notification.getReadFlag())) {
             return NotificationResponse.fromEntity(notification);
         }
 
         LocalDateTime now = LocalDateTime.now();
-        notification.setRead(true);
+        notification.setReadFlag(true);
         notification.setReadAt(now);
         notification.setUpdatedAt(now);
         notificationMapper.updateById(notification);
@@ -106,18 +127,37 @@ public class NotificationServiceImpl implements NotificationService {
             throw new BusinessException("INVALID_NOTIFICATION_TYPE", "Invalid notification type");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        NotificationEntity notification = new NotificationEntity();
-        notification.setRecipientUserId(recipientUserId);
-        notification.setType(type);
-        notification.setTitle(trimRequired(title, "Notification title is required"));
-        notification.setContent(trimRequired(content, "Notification content is required"));
-        notification.setRelatedType(trimToNull(relatedType));
-        notification.setRelatedId(relatedId);
-        notification.setRead(false);
-        notification.setCreatedAt(now);
-        notification.setUpdatedAt(now);
-        notificationMapper.insert(notification);
+        String normalizedTitle = trimRequired(title, "Notification title is required");
+        String normalizedContent = trimRequired(content, "Notification content is required");
+        String normalizedRelatedType = trimToNull(relatedType);
+        NotificationMessage message = new NotificationMessage(
+            NotificationEventKeyFactory.generate(
+                recipientUserId,
+                type,
+                normalizedTitle,
+                normalizedContent,
+                normalizedRelatedType,
+                relatedId
+            ),
+            recipientUserId,
+            type,
+            normalizedTitle,
+            normalizedContent,
+            normalizedRelatedType,
+            relatedId
+        );
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatchNotificationMessage(message);
+                }
+            });
+            return;
+        }
+
+        dispatchNotificationMessage(message);
     }
 
     private NotificationEntity getOwnedNotification(AuthenticatedUser currentUser, Long notificationId) {
@@ -146,5 +186,18 @@ public class NotificationServiceImpl implements NotificationService {
 
     private String trimToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private void dispatchNotificationMessage(NotificationMessage message) {
+        try {
+            notificationMessagePublisher.publish(message);
+        } catch (AmqpException exception) {
+            log.warn(
+                "Failed to publish notification event {}, falling back to direct persistence",
+                message.eventKey(),
+                exception
+            );
+            notificationPersistenceService.persistNotification(message);
+        }
     }
 }

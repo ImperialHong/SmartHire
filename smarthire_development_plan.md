@@ -146,7 +146,7 @@
 这部分属于工程亮点，不应影响主流程交付。
 
 - Redis 缓存热门岗位、岗位详情与统计概览（已完成第一阶段）
-- RabbitMQ 异步通知
+- RabbitMQ 异步通知（已完成第一阶段）
 - 定时任务关闭过期岗位或发送提醒
 - 更细的统计图表
 - CI/CD 或自动化部署校验
@@ -397,16 +397,17 @@ SmartHire/
 - P0 主业务闭环已完成：认证、岗位、投递、面试、通知
 - P1 高价值增强已完成：简历上传、统计、管理员轻量后台、操作日志、Docker、Swagger、Postman
 - Redis 缓存已完成第一阶段：公共岗位列表、岗位详情、统计概览
+- RabbitMQ 异步通知已完成第一阶段：事务提交后发布消息，消费者异步落库站内通知
 - 独立 `frontend/` React 应用已完成公共岗位、Candidate、HR、Admin 主流程
-- `docker compose` 已支持 `mysql + redis + backend + frontend` 一键启动
+- `docker compose` 已支持 `mysql + redis + rabbitmq + backend + frontend` 一键启动
 - 前端工作台与独立前端已完成一轮交互和视觉打磨
 
 ### 14.2 剩余优先级
 
-1. RabbitMQ 异步通知
-2. 定时任务关闭过期岗位或发送提醒
-3. 更细的统计图表或管理员可视化视图
-4. CI/CD 或自动化部署校验
+1. 定时任务关闭过期岗位或发送提醒
+2. 更细的统计图表或管理员可视化视图
+3. CI/CD 或自动化部署校验
+4. 邮件 / 短信等通知扩展消费者
 5. README / 计划 / demo guide 口径持续同步
 
 ---

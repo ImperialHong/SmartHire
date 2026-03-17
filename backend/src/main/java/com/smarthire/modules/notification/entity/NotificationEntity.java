@@ -21,6 +21,9 @@ public class NotificationEntity {
 
     private String content;
 
+    @TableField("event_key")
+    private String eventKey;
+
     @TableField("related_type")
     private String relatedType;
 
@@ -28,7 +31,7 @@ public class NotificationEntity {
     private Long relatedId;
 
     @TableField("is_read")
-    private Boolean read;
+    private Boolean readFlag;
 
     @TableField("read_at")
     private LocalDateTime readAt;
@@ -79,6 +82,14 @@ public class NotificationEntity {
         this.content = content;
     }
 
+    public String getEventKey() {
+        return eventKey;
+    }
+
+    public void setEventKey(String eventKey) {
+        this.eventKey = eventKey;
+    }
+
     public String getRelatedType() {
         return relatedType;
     }
@@ -95,12 +106,12 @@ public class NotificationEntity {
         this.relatedId = relatedId;
     }
 
-    public Boolean getRead() {
-        return read;
+    public Boolean getReadFlag() {
+        return readFlag;
     }
 
-    public void setRead(Boolean read) {
-        this.read = read;
+    public void setReadFlag(Boolean readFlag) {
+        this.readFlag = readFlag;
     }
 
     public LocalDateTime getReadAt() {

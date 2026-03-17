@@ -24,7 +24,7 @@ public record NotificationResponse(
             entity.getContent(),
             entity.getRelatedType(),
             entity.getRelatedId(),
-            entity.getRead(),
+            entity.getReadFlag(),
             entity.getReadAt(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
