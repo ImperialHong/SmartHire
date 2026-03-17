@@ -3,6 +3,7 @@ package com.smarthire.modules.interview.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smarthire.common.api.PageResponse;
+import com.smarthire.common.cache.CacheNames;
 import com.smarthire.common.exception.BusinessException;
 import com.smarthire.modules.application.entity.ApplicationEntity;
 import com.smarthire.modules.application.mapper.ApplicationMapper;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +69,7 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public InterviewResponse scheduleInterview(AuthenticatedUser currentUser, InterviewCreateRequest request) {
         validateHrOrAdminRole(currentUser);
 
@@ -130,6 +133,7 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
     public InterviewResponse updateInterview(
         AuthenticatedUser currentUser,
         Long interviewId,

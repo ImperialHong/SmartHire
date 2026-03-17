@@ -1,6 +1,7 @@
 package com.smarthire.modules.statistics.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.smarthire.common.cache.CacheNames;
 import com.smarthire.modules.application.entity.ApplicationEntity;
 import com.smarthire.modules.application.mapper.ApplicationMapper;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -45,6 +47,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     @Override
+    @Cacheable(
+        cacheNames = CacheNames.STATISTICS_OVERVIEW,
+        key = "T(com.smarthire.common.cache.CacheKeys).statisticsOverview(#currentUser)",
+        sync = true
+    )
     public StatisticsOverviewResponse getOverview(AuthenticatedUser currentUser) {
         validateHrOrAdminRole(currentUser);
 

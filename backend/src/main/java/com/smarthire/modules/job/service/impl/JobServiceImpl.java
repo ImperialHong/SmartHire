@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smarthire.common.api.PageResponse;
+import com.smarthire.common.cache.CacheNames;
 import com.smarthire.common.exception.BusinessException;
 import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.job.dto.request.JobCreateRequest;
@@ -18,6 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +47,10 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.JOB_LISTINGS, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    })
     public JobResponse createJob(AuthenticatedUser currentUser, JobCreateRequest request) {
         validateEditorRole(currentUser);
         validateSalaryRange(request.salaryMin(), request.salaryMax());
@@ -67,6 +75,11 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.JOB_DETAILS, key = "#jobId"),
+        @CacheEvict(cacheNames = CacheNames.JOB_LISTINGS, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    })
     public JobResponse updateJob(AuthenticatedUser currentUser, Long jobId, JobUpdateRequest request) {
         validateEditorRole(currentUser);
         validateSalaryRange(request.salaryMin(), request.salaryMax());
@@ -90,6 +103,11 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.JOB_DETAILS, key = "#jobId"),
+        @CacheEvict(cacheNames = CacheNames.JOB_LISTINGS, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.STATISTICS_OVERVIEW, allEntries = true)
+    })
     public void deleteJob(AuthenticatedUser currentUser, Long jobId) {
         validateEditorRole(currentUser);
 
@@ -107,11 +125,17 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.JOB_DETAILS, key = "#jobId", sync = true)
     public JobResponse getJob(Long jobId) {
         return JobResponse.fromEntity(getExistingJob(jobId));
     }
 
     @Override
+    @Cacheable(
+        cacheNames = CacheNames.JOB_LISTINGS,
+        key = "T(com.smarthire.common.cache.CacheKeys).jobSearch(#request)",
+        sync = true
+    )
     public PageResponse<JobResponse> listJobs(JobSearchRequest request) {
         LambdaQueryWrapper<JobEntity> query = Wrappers.<JobEntity>lambdaQuery()
             .orderByDesc(JobEntity::getCreatedAt);

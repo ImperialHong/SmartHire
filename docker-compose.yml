@@ -17,6 +17,21 @@ services:
       retries: 10
       start_period: 20s
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: smarthire-redis
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -24,12 +39,16 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: smarthire
       DB_USERNAME: root
       DB_PASSWORD: root
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       SERVER_PORT: 8080
       JWT_SECRET: smarthire-dev-secret-key-at-least-32-bytes-long
       JWT_ACCESS_TOKEN_EXPIRATION_SECONDS: 86400
@@ -50,3 +69,4 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:

@@ -145,7 +145,7 @@
 
 这部分属于工程亮点，不应影响主流程交付。
 
-- Redis 缓存热门岗位与岗位详情
+- Redis 缓存热门岗位、岗位详情与统计概览
 - RabbitMQ 异步通知
 - 定时任务关闭过期岗位或发送提醒
 - 更细的统计图表
@@ -397,8 +397,9 @@ SmartHire/
 
 - P0 主业务闭环已完成：认证、岗位、投递、面试、通知
 - P1 高价值增强已完成：简历上传、统计、管理员轻量后台、操作日志、Docker、Swagger、Postman
+- Redis 缓存已完成第一阶段：公共岗位列表、岗位详情、统计概览
 - 独立 `frontend/` React 应用已完成公共岗位、Candidate、HR、Admin 主流程
-- `docker compose` 已支持 `mysql + backend + frontend` 一键启动
+- `docker compose` 已支持 `mysql + redis + backend + frontend` 一键启动
 
 ### 14.2 剩余优先级
 
@@ -406,7 +407,7 @@ SmartHire/
 2. 前端交互和表单细节打磨
 3. 演示截图或录屏材料
 4. README / 计划 / demo guide 口径持续同步
-5. 从 Redis、RabbitMQ、定时任务、统计图表中只选一个作为 P2 亮点
+5. 继续从 RabbitMQ、定时任务、统计图表中选择后续 P2 亮点
 
 ---
 

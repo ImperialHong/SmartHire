@@ -24,13 +24,14 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
-已完成的 P1 项包括：
+已完成的增强项包括：
 
 - 简历文件上传
 - 基础数据统计
 - Docker 与 API 文档入口
 - 管理员轻量后台基础能力
 - 基础操作日志
+- Redis 缓存公共岗位与统计概览
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
 - `docker compose` 下的独立前端容器化部署
@@ -49,6 +50,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - Spring Security
 - MyBatis-Plus
 - MySQL 8
+- Redis
 - JWT
 - Springdoc OpenAPI / Swagger UI
 - React 18
@@ -86,6 +88,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - 岗位创建、更新、删除、详情
 - 关键词、城市、分类、状态筛选
 - 分页查询
+- Redis 缓存公共岗位列表与岗位详情
 - HR 只能管理自己发布的岗位，管理员可管理全部岗位
 
 ### 3. 投递模块
@@ -142,6 +145,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 - `ADMIN` 查看全局概览统计
 - 返回岗位、投递、面试三类基础聚合数据
 - 包含投递状态分布、面试状态分布和面试结果分布
+- Redis 缓存统计概览，岗位/投递/面试写操作后自动失效
 
 ### 7. 管理员模块
 
@@ -249,6 +253,9 @@ mysql -u root -p smarthire < sql/003_add_operation_logs.sql
 | `DB_NAME` | `smarthire` | 数据库名 |
 | `DB_USERNAME` | `root` | 数据库用户名 |
 | `DB_PASSWORD` | `root` | 数据库密码 |
+| `REDIS_HOST` | `localhost` | Redis 地址 |
+| `REDIS_PORT` | `6379` | Redis 端口 |
+| `SPRING_CACHE_TYPE` | `redis` | Spring Cache 类型 |
 | `SERVER_PORT` | `8080` | 服务端口 |
 | `JWT_SECRET` | `smarthire-dev-secret-key-at-least-32-bytes-long` | JWT 密钥 |
 | `JWT_ACCESS_TOKEN_EXPIRATION_SECONDS` | `86400` | Token 过期时间，单位秒 |
@@ -331,7 +338,7 @@ mvn test
 
 当前后端测试结果：
 
-- `74` 个测试通过
+- `77` 个测试通过
 - 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Swagger 文档端点、前端欢迎页和基础安全规则
 
 ### 6. 使用 Docker Compose 启动
@@ -349,6 +356,7 @@ docker compose up --build
 - `http://localhost:5173` - Independent React frontend
 - `http://localhost:8080` - SmartHire backend
 - `localhost:3306` - MySQL
+- `localhost:6379` - Redis
 
 说明：
 
@@ -592,7 +600,7 @@ Content-Type: application/json
 1. 做一轮完整联调验收并修掉真实问题
 2. 打磨前端交互、表单校验和错误提示
 3. 生成演示截图或录屏材料
-4. 从 Redis、RabbitMQ、定时任务、统计图表里只选一个继续做
+4. 继续做 RabbitMQ、定时任务或统计图表等剩余增强项
 
 ## 演示资料
 
