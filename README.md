@@ -1,6 +1,6 @@
 # SmartHire
 
-SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，目标是做出一条能写进简历、也能在面试里讲清楚的业务闭环。
+SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标是做出一条能写进简历、也能在面试里讲清楚的业务闭环。
 
 当前仓库已经完成后端核心流程：
 
@@ -20,7 +20,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 ## 当前阶段
 
-项目目前可以视为：`P0 已完成，P1 基本完成，已进入交付打磨与 P2 取舍阶段`。
+项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成第一阶段 Redis 缓存，下一步进入 RabbitMQ 等工程亮点增强`。
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
@@ -38,10 +38,10 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 
 已完成但还可以继续增强的方向：
 
-- 完整联调验收与 bug 清理
-- 真实前端页面与联调截图
-- 前端交互打磨、表单完善与视觉升级
-- 选择一个 P2 工程亮点继续深化
+- RabbitMQ 异步通知链路
+- 定时任务关闭过期岗位或发送提醒
+- 更细的统计图表与后台可视化
+- CI/CD 或自动化部署校验
 
 ## 技术栈
 
@@ -196,7 +196,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台后端练手项目，
 SmartHire/
 ├── backend/                     # Spring Boot 后端
 ├── frontend/                    # 独立前端应用
-├── docs/                        # 演示说明与截图清单
+├── docs/                        # 演示说明与补充资料
 ├── sql/                         # 数据库初始化与种子数据脚本
 ├── docker-compose.yml
 └── smarthire_development_plan.md
@@ -597,14 +597,14 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 做一轮完整联调验收并修掉真实问题
-2. 打磨前端交互、表单校验和错误提示
-3. 生成演示截图或录屏材料
-4. 继续做 RabbitMQ、定时任务或统计图表等剩余增强项
+1. 先做 RabbitMQ，把通知从同步调用改成异步链路
+2. 再做定时任务，比如自动关闭过期岗位或发送面试提醒
+3. 继续补更细的统计图表或管理员可视化视图
+4. 最后再考虑 CI/CD 或自动化部署校验
 
-## 演示资料
+## 补充资料
 
-仓库里已经预留了演示说明与截图清单：
+仓库里已经预留了演示说明与补充文档：
 
 - [docs/demo-guide.md](/Users/jay/Projects/SmartHire/docs/demo-guide.md)
 - [docs/screenshots/README.md](/Users/jay/Projects/SmartHire/docs/screenshots/README.md)
