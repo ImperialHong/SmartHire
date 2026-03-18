@@ -20,7 +20,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 
 ## 当前阶段
 
-项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis 缓存与 RabbitMQ 异步通知第一阶段，下一步进入定时任务等工程亮点增强`。
+项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis、RabbitMQ 与定时任务第一阶段，下一步进入统计可视化和 CI/CD 等工程增强`。
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
@@ -33,15 +33,16 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 基础操作日志
 - Redis 缓存公共岗位与统计概览
 - RabbitMQ 异步通知链路
+- 定时任务自动关闭过期岗位
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
 - `docker compose` 下的独立前端容器化部署
 
 已完成但还可以继续增强的方向：
 
-- 定时任务关闭过期岗位或发送提醒
 - 更细的统计图表与后台可视化
 - CI/CD 或自动化部署校验
+- 面试提醒或日报类定时任务
 
 ## 技术栈
 
@@ -90,6 +91,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 关键词、城市、分类、状态筛选
 - 分页查询
 - Redis 缓存公共岗位列表与岗位详情
+- 定时任务自动把已过截止时间且仍为 `OPEN` 的岗位更新为 `EXPIRED`
 - HR 只能管理自己发布的岗位，管理员可管理全部岗位
 
 ### 3. 投递模块
@@ -272,6 +274,9 @@ mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 | `RABBITMQ_PORT` | `5672` | RabbitMQ AMQP 端口 |
 | `RABBITMQ_USERNAME` | `guest` | RabbitMQ 用户名 |
 | `RABBITMQ_PASSWORD` | `guest` | RabbitMQ 密码 |
+| `APP_JOBS_EXPIRATION_ENABLED` | `true` | 是否开启岗位过期定时任务 |
+| `APP_JOBS_EXPIRATION_CRON` | `0 */5 * * * *` | 过期岗位扫描 cron |
+| `APP_JOBS_EXPIRATION_ZONE` | `Asia/Shanghai` | 定时任务时区 |
 | `SPRING_CACHE_TYPE` | `redis` | Spring Cache 类型 |
 | `SERVER_PORT` | `8080` | 服务端口 |
 | `JWT_SECRET` | `smarthire-dev-secret-key-at-least-32-bytes-long` | JWT 密钥 |
@@ -355,8 +360,8 @@ mvn test
 
 当前后端测试结果：
 
-- `82` 个测试通过
-- 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、Swagger 文档端点、前端欢迎页和基础安全规则
+- `85` 个测试通过
+- 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、定时任务、Swagger 文档端点、前端欢迎页和基础安全规则
 
 ### 6. 使用 Docker Compose 启动
 
@@ -622,9 +627,9 @@ Content-Type: application/json
 
 如果继续往下做，最值得补的顺序是：
 
-1. 先做定时任务，比如自动关闭过期岗位或发送面试提醒
-2. 再补更细的统计图表或管理员可视化视图
-3. 继续补 CI/CD 或自动化部署校验
+1. 先补更细的统计图表或管理员可视化视图
+2. 再补 CI/CD 或自动化部署校验
+3. 继续做面试提醒或日报类定时任务
 4. 最后视情况补邮件 / 短信等通知扩展消费者
 
 ## 补充资料

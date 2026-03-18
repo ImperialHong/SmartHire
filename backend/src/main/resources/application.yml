@@ -63,3 +63,8 @@ app:
       queue: ${APP_NOTIFICATION_QUEUE:smarthire.notification.persist}
       dead-letter-exchange: ${APP_NOTIFICATION_DEAD_LETTER_EXCHANGE:smarthire.notification.dlx}
       dead-letter-queue: ${APP_NOTIFICATION_DEAD_LETTER_QUEUE:smarthire.notification.persist.dlq}
+  jobs:
+    expiration:
+      enabled: ${APP_JOBS_EXPIRATION_ENABLED:true}
+      cron: ${APP_JOBS_EXPIRATION_CRON:0 */5 * * * *}
+      zone: ${APP_JOBS_EXPIRATION_ZONE:Asia/Shanghai}

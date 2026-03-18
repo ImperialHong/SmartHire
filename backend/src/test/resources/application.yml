@@ -21,6 +21,9 @@ mybatis-plus:
     banner: false
 
 app:
+  jobs:
+    expiration:
+      enabled: false
   jwt:
     secret: smarthire-test-secret-key-at-least-32-bytes
     access-token-expiration-seconds: 3600
