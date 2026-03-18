@@ -243,6 +243,7 @@ mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 - 演示账号
 - 演示岗位
 - 演示投递、面试与通知数据
+- 覆盖多候选人、双 HR、不同岗位状态与不同投递阶段的数据分层
 
 `003` 会初始化：
 
