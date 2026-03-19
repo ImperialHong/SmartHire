@@ -11,9 +11,13 @@ Use one clear story to demonstrate the full SmartHire workflow:
 1. Initialize the database:
 
 ```bash
-mysql -u root -p smarthire < sql/001_init_schema.sql
 mysql -u root -p smarthire < sql/002_seed_demo_data.sql
 ```
+
+Before importing demo seed data, make sure the schema has already been created by Flyway:
+
+- local backend startup via `mvn spring-boot:run`, or
+- `docker compose up --build`
 
 2. Start the backend:
 
@@ -120,7 +124,7 @@ Expected talking points:
 
 Expected talking points:
 
-- synchronous notification generation
+- RabbitMQ-driven asynchronous notification delivery
 - notification types map to business events
 - unread count and read status support
 
@@ -159,5 +163,6 @@ Expected talking points:
 
 ## Notes
 
-- If you use Docker Compose for a fresh environment, both `001` and `002` scripts load automatically.
-- If a MySQL data volume already exists, re-run the SQL scripts manually to reset the demo state.
+- If you use Docker Compose, backend startup will run Flyway migrations automatically.
+- Demo seed data is still imported separately through `sql/002_seed_demo_data.sql`.
+- If a MySQL data volume already exists and you want a clean demo state, either re-run `sql/002_seed_demo_data.sql` or reset the volume with `docker compose down -v`.

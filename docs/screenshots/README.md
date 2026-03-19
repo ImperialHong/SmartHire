@@ -39,7 +39,7 @@ Capture these screenshots after importing `sql/002_seed_demo_data.sql` and runni
    Admin operation log list showing key write actions and operator snapshots.
 
 13. `13-frontend-workbench.png`
-   Frontend workbench showing public jobs plus candidate, HR, and admin panels.
+   Frontend workbench showing the public jobs page and role-based workspace entry.
 
 Recommended storage rule:
 
