@@ -3,7 +3,7 @@
 -- Purpose: create reusable demo accounts, jobs, applications, interviews and notifications
 -- 用途：初始化可重复执行的演示账号、岗位、投递、面试和通知数据
 -- Demo password / 演示密码：password123
--- Safe to rerun after 001_init_schema.sql / 在执行 001_init_schema.sql 后可重复运行
+-- Safe to rerun after Flyway schema migrations / 在执行 Flyway 结构迁移后可重复运行
 
 USE smarthire;
 

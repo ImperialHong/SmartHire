@@ -9,7 +9,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
       interval: 10s
@@ -74,6 +73,8 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       SERVER_PORT: 8080
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_BASELINE_VERSION: 3
       JWT_SECRET: smarthire-dev-secret-key-at-least-32-bytes-long
       JWT_ACCESS_TOKEN_EXPIRATION_SECONDS: 86400
     ports:

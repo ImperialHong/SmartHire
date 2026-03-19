@@ -34,6 +34,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - Redis 缓存公共岗位与统计概览
 - RabbitMQ 异步通知链路
 - 定时任务自动关闭过期岗位
+- Flyway 数据库结构迁移
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
 - `docker compose` 下的独立前端容器化部署
@@ -53,6 +54,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - MySQL 8
 - Redis
 - RabbitMQ
+- Flyway
 - JWT
 - Springdoc OpenAPI / Swagger UI
 - React 18
@@ -221,23 +223,25 @@ SmartHire/
 CREATE DATABASE smarthire CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-再执行初始化脚本：
+然后启动后端，Flyway 会自动执行 `backend/src/main/resources/db/migration` 下的结构迁移脚本：
 
-```bash
-mysql -u root -p smarthire < sql/001_init_schema.sql
+```text
+V1__init_schema.sql
+V2__add_operation_logs.sql
+V3__add_notification_event_key.sql
 ```
 
-如果你想直接导入演示数据，再执行：
+如果你想导入演示数据，再手动执行：
 
 ```bash
 mysql -u root -p smarthire < sql/002_seed_demo_data.sql
-mysql -u root -p smarthire < sql/003_add_operation_logs.sql
-mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 ```
 
-`001` 会初始化：
+Flyway 迁移会初始化：
 
 - 核心表结构
+- 操作日志表
+- 通知异步幂等字段
 - 角色数据：`CANDIDATE`、`HR`、`ADMIN`
 
 `002` 会初始化：
@@ -246,14 +250,6 @@ mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 - 演示岗位
 - 演示投递、面试与通知数据
 - 覆盖多候选人、双 HR、不同岗位状态与不同投递阶段的数据分层
-
-`003` 会初始化：
-
-- 管理员可查看的操作日志表
-
-`004` 会初始化：
-
-- RabbitMQ 异步通知使用的通知事件幂等键
 
 ### 2. 配置环境变量
 
@@ -274,6 +270,9 @@ mysql -u root -p smarthire < sql/004_add_notification_event_key.sql
 | `RABBITMQ_PORT` | `5672` | RabbitMQ AMQP 端口 |
 | `RABBITMQ_USERNAME` | `guest` | RabbitMQ 用户名 |
 | `RABBITMQ_PASSWORD` | `guest` | RabbitMQ 密码 |
+| `SPRING_FLYWAY_ENABLED` | `true` | 是否启用 Flyway 结构迁移 |
+| `SPRING_FLYWAY_BASELINE_ON_MIGRATE` | `false` | 是否在已有非空库上做 Flyway baseline |
+| `SPRING_FLYWAY_BASELINE_VERSION` | `3` | baseline 时接管的当前结构版本 |
 | `APP_JOBS_EXPIRATION_ENABLED` | `true` | 是否开启岗位过期定时任务 |
 | `APP_JOBS_EXPIRATION_CRON` | `0 */5 * * * *` | 过期岗位扫描 cron |
 | `APP_JOBS_EXPIRATION_ZONE` | `Asia/Shanghai` | 定时任务时区 |
@@ -371,12 +370,34 @@ mvn test
 docker compose up --build
 ```
 
-首次启动时，MySQL 会按顺序自动执行 `sql/001_init_schema.sql`、`sql/002_seed_demo_data.sql`、`sql/003_add_operation_logs.sql` 和 `sql/004_add_notification_event_key.sql`。
+启动后，backend 容器会自动通过 Flyway 执行数据库结构迁移。
 
-如果你之前已经启动过旧版本的 MySQL volume，需要二选一：
+为了兼容你本地已经存在的旧 MySQL volume，compose 默认会带上：
 
-- 手动执行 `sql/004_add_notification_event_key.sql`
-- 或者运行 `docker compose down -v` 后重新初始化数据库
+- `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true`
+- `SPRING_FLYWAY_BASELINE_VERSION=3`
+
+这样当前已经处于最新结构、但还没有 Flyway 历史表的本地数据库，也能被平滑接管。
+
+如果你想导入演示账号和样例数据，等 backend 启动成功后再执行：
+
+```bash
+docker compose exec -T mysql mysql -uroot -proot smarthire < sql/002_seed_demo_data.sql
+```
+
+如果你之前已经启动过旧版本的 MySQL volume，最简单的本地升级方式是：
+
+- 运行 `docker compose down -v`
+- 然后重新执行 `docker compose up --build`
+
+如果你是本地直接跑 `mvn spring-boot:run` 而不是 compose，并且连接的是旧的预 Flyway 数据库，可以临时加：
+
+```bash
+export SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
+export SPRING_FLYWAY_BASELINE_VERSION=3
+```
+
+前提是这个数据库已经处于当前结构版本。
 
 服务默认暴露：
 
@@ -604,7 +625,7 @@ Content-Type: application/json
 
 ## 数据库说明
 
-核心表已经落地在 [sql/001_init_schema.sql](sql/001_init_schema.sql)：
+核心结构迁移已经落地在 [V1__init_schema.sql](/Users/jay/Projects/SmartHire/backend/src/main/resources/db/migration/V1__init_schema.sql)、[V2__add_operation_logs.sql](/Users/jay/Projects/SmartHire/backend/src/main/resources/db/migration/V2__add_operation_logs.sql) 和 [V3__add_notification_event_key.sql](/Users/jay/Projects/SmartHire/backend/src/main/resources/db/migration/V3__add_notification_event_key.sql)：
 
 - `users`
 - `roles`
