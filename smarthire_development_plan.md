@@ -402,6 +402,7 @@ SmartHire/
 - 定时任务已完成第一阶段：自动关闭已过截止时间且仍为 OPEN 的岗位，并记录系统操作日志
 - 独立 `frontend/` React 应用已完成公共岗位、Candidate、HR、Admin 主流程
 - `docker compose` 已支持 `mysql + redis + rabbitmq + backend + frontend` 一键启动
+- 基于 Testcontainers 的 Flyway / Redis / RabbitMQ 集成测试已补齐第一阶段
 - 前端工作台与独立前端已完成一轮交互和视觉打磨
 
 ### 14.2 剩余优先级

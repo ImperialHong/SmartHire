@@ -63,7 +63,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - React Router
 - TanStack Query
 - Maven
-- JUnit 5 + MockMvc + Mockito
+- JUnit 5 + MockMvc + Mockito + Testcontainers
 
 ## 已实现模块
 
@@ -359,8 +359,9 @@ mvn test
 
 当前后端测试结果：
 
-- `85` 个测试通过
+- `88` 个测试通过
 - 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、定时任务、Swagger 文档端点、前端欢迎页和基础安全规则
+- 已补充基于 Testcontainers 的 Flyway / MySQL、Redis 缓存失效、RabbitMQ 异步通知集成测试
 
 ### 6. 使用 Docker Compose 启动
 
