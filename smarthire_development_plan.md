@@ -404,6 +404,7 @@ SmartHire/
 - `docker compose` 已支持 `mysql + redis + rabbitmq + backend + frontend` 一键启动
 - 基于 Testcontainers 的 Flyway / Redis / RabbitMQ 集成测试已补齐第一阶段
 - GitHub Actions CI 已补齐第一阶段：backend 测试、frontend 构建、compose 配置校验
+- GitHub Actions 镜像构建校验已补齐第一阶段：backend / frontend Dockerfile 自动构建
 - 前端工作台与独立前端已完成一轮交互和视觉打磨
 
 ### 14.2 剩余优先级

@@ -421,6 +421,15 @@ export SPRING_FLYWAY_BASELINE_VERSION=3
 - frontend：`npm ci && npm run build`
 - `docker compose config` 配置校验
 
+仓库还补了镜像构建工作流：
+
+- [docker-images.yml](/Users/jay/Projects/SmartHire/.github/workflows/docker-images.yml)
+
+当前会自动验证：
+
+- backend Docker 镜像可构建
+- frontend Docker 镜像可构建
+
 触发方式：
 
 - push 到 `main`
