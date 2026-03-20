@@ -150,7 +150,7 @@
 - RabbitMQ 异步通知（已完成第一阶段）
 - 定时任务关闭过期岗位或发送提醒（已完成第一阶段）
 - 更细的统计图表
-- CI/CD 或自动化部署校验
+- GitHub Actions CI 与自动化部署校验
 
 ### 5.4 当前明确不做
 
@@ -403,12 +403,13 @@ SmartHire/
 - 独立 `frontend/` React 应用已完成公共岗位、Candidate、HR、Admin 主流程
 - `docker compose` 已支持 `mysql + redis + rabbitmq + backend + frontend` 一键启动
 - 基于 Testcontainers 的 Flyway / Redis / RabbitMQ 集成测试已补齐第一阶段
+- GitHub Actions CI 已补齐第一阶段：backend 测试、frontend 构建、compose 配置校验
 - 前端工作台与独立前端已完成一轮交互和视觉打磨
 
 ### 14.2 剩余优先级
 
 1. 更细的统计图表或管理员可视化视图
-2. CI/CD 或自动化部署校验
+2. 自动部署、镜像发布或环境分支策略
 3. 面试提醒或日报类定时任务
 4. 邮件 / 短信等通知扩展消费者
 5. README / 计划 / demo guide 口径持续同步

@@ -42,7 +42,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 已完成但还可以继续增强的方向：
 
 - 更细的统计图表与后台可视化
-- CI/CD 或自动化部署校验
+- 自动化部署校验增强
 - 面试提醒或日报类定时任务
 
 ## 技术栈
@@ -409,6 +409,24 @@ export SPRING_FLYWAY_BASELINE_VERSION=3
 - `localhost:5672` - RabbitMQ AMQP
 - `http://localhost:15672` - RabbitMQ Management UI
 
+### 7. GitHub Actions CI
+
+仓库已经提供基础 CI 工作流：
+
+- [ci.yml](/Users/jay/Projects/SmartHire/.github/workflows/ci.yml)
+
+当前会自动执行：
+
+- backend：`mvn test`
+- frontend：`npm ci && npm run build`
+- `docker compose config` 配置校验
+
+触发方式：
+
+- push 到 `main`
+- pull request
+- 手动触发 `workflow_dispatch`
+
 说明：
 
 - `http://localhost:5173` 是独立前端容器，`/api` 会自动反向代理到后端容器
@@ -650,7 +668,7 @@ Content-Type: application/json
 如果继续往下做，最值得补的顺序是：
 
 1. 先补更细的统计图表或管理员可视化视图
-2. 再补 CI/CD 或自动化部署校验
+2. 再补自动部署或镜像发布链路
 3. 继续做面试提醒或日报类定时任务
 4. 最后视情况补邮件 / 短信等通知扩展消费者
 
