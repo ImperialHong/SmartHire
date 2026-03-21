@@ -20,7 +20,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 
 ## 当前阶段
 
-项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis、RabbitMQ 与定时任务第一阶段，下一步进入统计可视化和 CI/CD 等工程增强`。
+项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis、RabbitMQ、定时任务与 CI/CD 第一阶段，下一步进入统计可视化和生产部署增强。`
 
 `auth -> jobs -> applications -> interviews -> notifications`
 
@@ -38,11 +38,13 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
 - `docker compose` 下的独立前端容器化部署
+- GitHub Actions 自动测试、构建与镜像校验
+- GHCR 镜像发布与手动触发的 SSH 部署骨架
 
 已完成但还可以继续增强的方向：
 
 - 更细的统计图表与后台可视化
-- 自动化部署校验增强
+- 真实生产环境接入、域名 / HTTPS 与回滚策略
 - 面试提醒或日报类定时任务
 
 ## 技术栈
@@ -441,6 +443,44 @@ export SPRING_FLYWAY_BASELINE_VERSION=3
 - `http://localhost:5173` 是独立前端容器，`/api` 会自动反向代理到后端容器
 - `http://localhost:8080` 仍然保留 Spring Boot 同源提供的轻量 workbench
 
+### 8. GitHub Actions CD
+
+仓库已经补上第一版 CD 骨架：
+
+- [publish-images.yml](/Users/jay/Projects/SmartHire/.github/workflows/publish-images.yml)
+- [deploy.yml](/Users/jay/Projects/SmartHire/.github/workflows/deploy.yml)
+- [deploy/docker-compose.prod.yml](/Users/jay/Projects/SmartHire/deploy/docker-compose.prod.yml)
+- [deploy/.env.example](/Users/jay/Projects/SmartHire/deploy/.env.example)
+- [deploy/README.md](/Users/jay/Projects/SmartHire/deploy/README.md)
+
+当前发布流程：
+
+- `publish-images.yml` 会在 `CI` 成功后，或手动触发时，把 `backend` / `frontend` 镜像推送到 `GHCR`
+- 默认会推送 `latest` 和基于 commit sha 的标签
+
+当前部署流程：
+
+- `deploy.yml` 通过 `workflow_dispatch` 手动触发
+- workflow 会把生产 compose 文件复制到远程服务器
+- 然后根据 `PROD_ENV_FILE` 和镜像标签生成远程 `.env`
+- 最后在服务器执行 `docker compose pull && docker compose up -d`
+
+部署需要的 GitHub Secrets：
+
+- `DEPLOY_HOST`
+- `DEPLOY_USER`
+- `DEPLOY_SSH_KEY`
+- `DEPLOY_PORT`
+- `DEPLOY_PATH`
+- `GHCR_USERNAME`
+- `GHCR_TOKEN`
+- `PROD_ENV_FILE`
+
+说明：
+
+- `PROD_ENV_FILE` 可以参考 [deploy/.env.example](/Users/jay/Projects/SmartHire/deploy/.env.example) 准备
+- 当前这版属于“可接服务器的 CD 骨架”，还没有替你绑定具体服务器、域名或 HTTPS
+
 停止服务：
 
 ```bash
@@ -677,7 +717,7 @@ Content-Type: application/json
 如果继续往下做，最值得补的顺序是：
 
 1. 先补更细的统计图表或管理员可视化视图
-2. 再补自动部署或镜像发布链路
+2. 再补真实生产环境接入、域名 / HTTPS、回滚与环境分支策略
 3. 继续做面试提醒或日报类定时任务
 4. 最后视情况补邮件 / 短信等通知扩展消费者
 

@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag to deploy
+        required: true
+        default: latest
+      environment_name:
+        description: GitHub environment name
+        required: true
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Remote Host
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ inputs.environment_name }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare image names
+        id: image_names
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          echo "backend=ghcr.io/${owner}/smarthire-backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=ghcr.io/${owner}/smarthire-frontend" >> "$GITHUB_OUTPUT"
+
+      - name: Copy deployment compose file
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          source: deploy/docker-compose.prod.yml
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 1
+
+      - name: Apply deployment on remote host
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          REGISTRY_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.GHCR_TOKEN }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+          BACKEND_IMAGE: ${{ steps.image_names.outputs.backend }}
+          FRONTEND_IMAGE: ${{ steps.image_names.outputs.frontend }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          envs: DEPLOY_PATH,REGISTRY_USERNAME,REGISTRY_PASSWORD,PROD_ENV_FILE,BACKEND_IMAGE,FRONTEND_IMAGE,IMAGE_TAG
+          script: |
+            set -eu
+            mkdir -p "${DEPLOY_PATH}"
+
+            cat <<'EOF' > "${DEPLOY_PATH}/.env.runtime"
+            ${PROD_ENV_FILE}
+            EOF
+
+            cat <<EOF > "${DEPLOY_PATH}/.env"
+            BACKEND_IMAGE=${BACKEND_IMAGE}
+            FRONTEND_IMAGE=${FRONTEND_IMAGE}
+            IMAGE_TAG=${IMAGE_TAG}
+            EOF
+
+            cat "${DEPLOY_PATH}/.env.runtime" >> "${DEPLOY_PATH}/.env"
+            rm -f "${DEPLOY_PATH}/.env.runtime"
+
+            echo "${REGISTRY_PASSWORD}" | docker login ghcr.io -u "${REGISTRY_USERNAME}" --password-stdin
+            docker compose --env-file "${DEPLOY_PATH}/.env" -f "${DEPLOY_PATH}/docker-compose.prod.yml" pull
+            docker compose --env-file "${DEPLOY_PATH}/.env" -f "${DEPLOY_PATH}/docker-compose.prod.yml" up -d --remove-orphans
+            docker image prune -f

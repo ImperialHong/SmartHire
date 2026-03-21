@@ -15,7 +15,15 @@ export class ApiError extends Error {
 }
 
 export function getBackendOrigin() {
-    return (import.meta.env.VITE_BACKEND_ORIGIN || "http://localhost:8080").replace(/\/$/, "");
+    if (import.meta.env.VITE_BACKEND_ORIGIN) {
+        return import.meta.env.VITE_BACKEND_ORIGIN.replace(/\/$/, "");
+    }
+
+    if (typeof window !== "undefined" && window.location?.origin) {
+        return window.location.origin.replace(/\/$/, "");
+    }
+
+    return "http://localhost:8080";
 }
 
 export async function apiRequest<T>(
