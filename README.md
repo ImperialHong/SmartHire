@@ -2,6 +2,21 @@
 
 SmartHire 是一个围绕 Java、Spring Boot、Spring Security、JWT、MySQL 等技术栈搭建的招聘管理练手项目，目标是把认证鉴权、业务建模、缓存、消息队列、定时任务、数据库迁移、容器化和前后端协作串成一条完整的练习链路。
 
+## 项目定位
+
+- 做一个可以写进简历、也能在面试里讲清楚的 Java 项目
+- 优先完成真实业务闭环，而不是堆很多零散功能
+- 优先保证后端完整性，再补前端展示和工程增强
+- 强调业务建模、权限设计、状态流转和工程化能力
+
+## 成功标准
+
+- 候选人可以注册、登录、浏览岗位、投递岗位、查看投递记录
+- HR 可以发布岗位、管理岗位、查看投递列表、推进申请状态、安排面试
+- 系统支持 JWT 鉴权与基础 RBAC 权限控制
+- 系统支持通知记录，形成完整招聘流程闭环
+- 仓库包含 README、数据库迁移脚本、接口说明，并能口头讲清楚核心业务与工程设计
+
 ## 技术栈
 
 - 后端：Java 21、Spring Boot 3.3.4、Spring Security、MyBatis-Plus、JWT、Flyway、Maven
@@ -9,6 +24,42 @@ SmartHire 是一个围绕 Java、Spring Boot、Spring Security、JWT、MySQL 等
 - 前端：React 18、TypeScript、Vite、React Router、TanStack Query
 - 工程化：Docker、Docker Compose、Springdoc OpenAPI / Swagger UI、GitHub Actions
 - 测试：JUnit 5、MockMvc、Mockito、Testcontainers
+
+## 范围拆分
+
+### P0：核心闭环
+
+- 注册、登录、密码加密、JWT 鉴权、基础 RBAC
+- 岗位创建、更新、删除、详情、分页与条件搜索
+- 候选人投递岗位、查看个人投递、HR 查看岗位投递
+- 防重复投递与申请状态流转
+- HR 安排面试、候选人查看面试、更新面试结果
+- 投递成功、状态更新、面试安排等站内通知
+
+### P1：完整度增强
+
+- 简历 PDF 上传
+- 基础数据统计
+- 管理员轻量后台
+- README 与接口文档完善
+- Docker 化部署
+- 基础操作日志
+
+### P2：工程亮点
+
+- Redis 缓存岗位列表、岗位详情与统计概览
+- RabbitMQ 异步通知链路
+- 定时任务关闭过期岗位与发送面试提醒
+- 更细的统计图表与后台可视化
+- GitHub Actions CI/CD 与部署校验
+
+### 当前明确不做
+
+- 复杂动态角色权限管理平台
+- 多轮面试流程编排
+- 邮件 / 短信真实发送
+- 大而全的后台管理系统
+- 过度复杂的前端 UI
 
 ## 目前已完成的核心流程
 
@@ -39,8 +90,7 @@ SmartHire/
 ├── frontend/                    # 独立前端应用
 ├── docs/                        # 演示说明与补充资料
 ├── sql/                         # 数据库初始化与种子数据脚本
-├── docker-compose.yml
-└── smarthire_development_plan.md
+└── docker-compose.yml
 ```
 
 ## 快速开始
