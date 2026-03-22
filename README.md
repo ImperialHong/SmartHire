@@ -77,7 +77,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 
 说明：
 
-- 注册接口默认创建 `CANDIDATE` 角色账号
+- 注册接口允许自助创建 `CANDIDATE / HR` 角色账号，`ADMIN` 账号单独维护
 - 鉴权方式为 JWT Bearer Token
 - 当前角色模型为 `CANDIDATE / HR / ADMIN`
 
@@ -594,7 +594,8 @@ Content-Type: application/json
   "email": "candidate@example.com",
   "password": "password123",
   "fullName": "Candidate User",
-  "phone": "13800138000"
+  "phone": "13800138000",
+  "roleCode": "CANDIDATE"
 }
 ```
 

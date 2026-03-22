@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { LoginDialog } from "../../features/auth/components/LoginDialog";
+import { RegisterDialog } from "../../features/auth/components/RegisterDialog";
+import { resolveDefaultWorkspace } from "../../features/auth/utils/resolveWorkspace";
 import { StatusPill } from "../components/StatusPill";
 
 const workspaceItems = [
@@ -13,7 +15,7 @@ const workspaceItems = [
 export function AppLayout() {
     const { session, logout, isHydrating } = useAuth();
     const location = useLocation();
-    const [isLoginOpen, setIsLoginOpen] = useState(false);
+    const [activeAuthDialog, setActiveAuthDialog] = useState<"login" | "register" | null>(null);
     const navigationItems = [
         { to: "/", label: "Public Jobs" },
         ...(session
@@ -21,10 +23,10 @@ export function AppLayout() {
             : [])
     ];
     const preferredWorkspace = session
-        ? workspaceItems.find(item => session.user.roles.includes(item.role)) || null
+        ? resolveDefaultWorkspace(session.user.roles)
         : null;
     const isOnPreferredWorkspace = preferredWorkspace
-        ? location.pathname === preferredWorkspace.to || location.pathname.startsWith(`${preferredWorkspace.to}/`)
+        ? location.pathname === preferredWorkspace || location.pathname.startsWith(`${preferredWorkspace}/`)
         : false;
 
     return (
@@ -71,8 +73,8 @@ export function AppLayout() {
                                 </div>
                             </div>
                             <div className="button-row">
-                                {preferredWorkspace && !isOnPreferredWorkspace ? (
-                                    <NavLink className="button button--primary" to={preferredWorkspace.to}>
+                                {preferredWorkspace && preferredWorkspace !== "/" && !isOnPreferredWorkspace ? (
+                                    <NavLink className="button button--primary" to={preferredWorkspace}>
                                         Open Workspace
                                     </NavLink>
                                 ) : null}
@@ -89,21 +91,28 @@ export function AppLayout() {
                                     <p>Browse public jobs now, then sign in to unlock your role workspace.</p>
                                 </div>
                                 <div className="session-box__meta">
-                                    <span className="muted-text">Available after sign-in</span>
+                                    <span className="muted-text">Available access</span>
                                     <div className="inline-pills">
                                         <StatusPill tone="info">Candidate</StatusPill>
                                         <StatusPill tone="info">HR</StatusPill>
-                                        <StatusPill tone="info">Admin</StatusPill>
+                                        <StatusPill tone="info">Admin existing accounts</StatusPill>
                                     </div>
                                 </div>
                             </div>
                             <div className="button-row">
                                 <button
                                     className="button button--primary"
-                                    onClick={() => setIsLoginOpen(true)}
+                                    onClick={() => setActiveAuthDialog("login")}
                                     type="button"
                                 >
                                     Login
+                                </button>
+                                <button
+                                    className="button button--ghost"
+                                    onClick={() => setActiveAuthDialog("register")}
+                                    type="button"
+                                >
+                                    Register
                                 </button>
                             </div>
                         </>
@@ -115,7 +124,8 @@ export function AppLayout() {
                 <Outlet />
             </main>
 
-            <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+            <LoginDialog isOpen={activeAuthDialog === "login"} onClose={() => setActiveAuthDialog(null)} />
+            <RegisterDialog isOpen={activeAuthDialog === "register"} onClose={() => setActiveAuthDialog(null)} />
         </div>
     );
 }

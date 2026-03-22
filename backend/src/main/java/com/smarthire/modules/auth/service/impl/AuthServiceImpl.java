@@ -16,7 +16,9 @@ import com.smarthire.modules.auth.security.AuthenticatedUser;
 import com.smarthire.modules.auth.security.JwtTokenService;
 import com.smarthire.modules.auth.service.AuthService;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.List;
+import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,9 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService {
 
     private static final String ROLE_CANDIDATE = "CANDIDATE";
+    private static final String ROLE_HR = "HR";
     private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final Set<String> SELF_SERVICE_ROLE_CODES = Set.of(ROLE_CANDIDATE, ROLE_HR);
 
     private final UserMapper userMapper;
     private final RoleMapper roleMapper;
@@ -55,11 +59,22 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("EMAIL_ALREADY_EXISTS", "Email is already registered");
         }
 
-        RoleEntity candidateRole = roleMapper.selectOne(
-            Wrappers.<RoleEntity>lambdaQuery().eq(RoleEntity::getCode, ROLE_CANDIDATE)
+        String requestedRoleCode = normalizeRoleCode(request.roleCode());
+        if (!SELF_SERVICE_ROLE_CODES.contains(requestedRoleCode)) {
+            throw new BusinessException(
+                "UNSUPPORTED_REGISTRATION_ROLE",
+                "Only candidate or HR accounts can self-register"
+            );
+        }
+
+        RoleEntity requestedRole = roleMapper.selectOne(
+            Wrappers.<RoleEntity>lambdaQuery().eq(RoleEntity::getCode, requestedRoleCode)
         );
-        if (candidateRole == null) {
-            throw new BusinessException("ROLE_NOT_INITIALIZED", "Candidate role is not initialized");
+        if (requestedRole == null) {
+            throw new BusinessException(
+                "ROLE_NOT_INITIALIZED",
+                "%s role is not initialized".formatted(requestedRoleCode)
+            );
         }
 
         UserEntity user = new UserEntity();
@@ -72,10 +87,10 @@ public class AuthServiceImpl implements AuthService {
 
         UserRoleEntity userRole = new UserRoleEntity();
         userRole.setUserId(user.getId());
-        userRole.setRoleId(candidateRole.getId());
+        userRole.setRoleId(requestedRole.getId());
         userRoleMapper.insert(userRole);
 
-        List<String> roleCodes = List.of(candidateRole.getCode());
+        List<String> roleCodes = List.of(requestedRole.getCode());
         return buildAuthResponse(user, roleCodes);
     }
 
@@ -138,5 +153,9 @@ public class AuthServiceImpl implements AuthService {
             .distinct()
             .sorted()
             .toList();
+    }
+
+    private String normalizeRoleCode(String roleCode) {
+        return roleCode == null ? "" : roleCode.trim().toUpperCase(Locale.ROOT);
     }
 }

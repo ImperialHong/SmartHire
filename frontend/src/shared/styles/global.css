@@ -325,6 +325,12 @@ button {
     gap: 0.75rem;
 }
 
+@media (max-width: 520px) {
+    .toggle-group {
+        grid-template-columns: 1fr;
+    }
+}
+
 .toggle-chip {
     min-height: 3rem;
     padding: 0.9rem 1rem;

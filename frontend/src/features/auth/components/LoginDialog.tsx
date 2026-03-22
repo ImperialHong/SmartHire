@@ -2,35 +2,16 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../app/providers/AuthProvider";
-import type { UserRole } from "../types";
-
-type LoginWorkspace = "CANDIDATE" | "HR";
+import { resolveDefaultWorkspace } from "../utils/resolveWorkspace";
 
 interface LoginDialogProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-function resolveDestination(roles: UserRole[], preferredWorkspace: LoginWorkspace) {
-    if (preferredWorkspace === "CANDIDATE" && roles.includes("CANDIDATE")) {
-        return "/candidate";
-    }
-    if (preferredWorkspace === "HR" && (roles.includes("HR") || roles.includes("ADMIN"))) {
-        return "/hr";
-    }
-    if (roles.includes("ADMIN")) {
-        return "/admin";
-    }
-    if (roles.includes("HR")) {
-        return "/hr";
-    }
-    return "/candidate";
-}
-
 export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
     const navigate = useNavigate();
     const { loginWithCredentials } = useAuth();
-    const [workspace, setWorkspace] = useState<LoginWorkspace>("CANDIDATE");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,7 +58,7 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                 password
             });
             onClose();
-            navigate(resolveDestination(nextSession.user.roles, workspace));
+            navigate(resolveDefaultWorkspace(nextSession.user.roles));
         } catch (submitError) {
             setError(submitError instanceof Error ? submitError.message : "Login failed.");
         } finally {
@@ -98,7 +79,7 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                         <p className="eyebrow">Sign In</p>
                         <h2>Login to your workspace</h2>
                         <p className="section-card__description">
-                            Choose the workspace you want to enter, then sign in with your own email and password.
+                            Sign in with your own email and password. We will open the right workspace based on your account role.
                         </p>
                     </div>
                     <button
@@ -112,32 +93,13 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                 </div>
 
                 <form className="auth-form" onSubmit={handleSubmit}>
-                    <div className="toggle-group" role="tablist" aria-label="Workspace selection">
-                        <button
-                            className={workspace === "CANDIDATE" ? "toggle-chip toggle-chip--active" : "toggle-chip"}
-                            onClick={() => setWorkspace("CANDIDATE")}
-                            role="tab"
-                            type="button"
-                        >
-                            Login as Candidate
-                        </button>
-                        <button
-                            className={workspace === "HR" ? "toggle-chip toggle-chip--active" : "toggle-chip"}
-                            onClick={() => setWorkspace("HR")}
-                            role="tab"
-                            type="button"
-                        >
-                            Login as HR
-                        </button>
-                    </div>
-
                     <div className="form-field">
                         <label htmlFor="login-email">Email</label>
                         <input
                             id="login-email"
                             autoComplete="username"
                             onChange={event => setEmail(event.target.value)}
-                            placeholder={workspace === "CANDIDATE" ? "candidate@example.com" : "hr@example.com"}
+                            placeholder="you@example.com"
                             type="email"
                             value={email}
                         />
@@ -154,6 +116,10 @@ export function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                             value={password}
                         />
                     </div>
+
+                    <p className="field-note field-note--info">
+                        Admin accounts always open the admin workspace after a successful sign-in.
+                    </p>
 
                     {error ? <div className="notice notice--warn">{error}</div> : null}
 

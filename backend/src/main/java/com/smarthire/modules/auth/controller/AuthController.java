@@ -29,7 +29,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @Operation(summary = "Register a candidate account")
+    @Operation(summary = "Register a candidate or HR account")
     @PostMapping("/register")
     public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ApiResponse.success("Registration succeeded", authService.register(request));

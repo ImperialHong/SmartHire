@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../app/providers/AuthProvider";
+import { resolveDefaultWorkspace } from "../../features/auth/utils/resolveWorkspace";
 import { usePublicJobs } from "../../features/jobs/hooks/usePublicJobs";
 import { EmptyState } from "../../shared/components/EmptyState";
 import { SectionCard } from "../../shared/components/SectionCard";
@@ -36,15 +37,7 @@ export function PublicJobsPage() {
             return matchesKeyword && matchesCity && matchesCategory;
         });
     }, [allJobs, keyword, cityFilter, categoryFilter]);
-    const preferredWorkspace = session
-        ? (session.user.roles.includes("ADMIN")
-            ? "/admin"
-            : session.user.roles.includes("HR")
-                ? "/hr"
-                : session.user.roles.includes("CANDIDATE")
-                    ? "/candidate"
-                    : "/")
-        : null;
+    const preferredWorkspace = session ? resolveDefaultWorkspace(session.user.roles) : null;
 
     function clearFilters() {
         setKeyword("");
@@ -92,11 +85,11 @@ export function PublicJobsPage() {
                 </div>
                 <div className="callout">
                     <strong>Role-based access</strong>
-                    <p>Use the login button in the top bar to enter the candidate or HR workspace with your own account.</p>
+                    <p>Register as a candidate or HR user, or sign in with any existing account and we will route you automatically.</p>
                     <div className="inline-pills inline-pills--wrap">
                         <StatusPill tone="info">Candidate apply flow</StatusPill>
                         <StatusPill tone="info">HR review flow</StatusPill>
-                        <StatusPill tone="info">Admin oversight remains available after sign-in</StatusPill>
+                        <StatusPill tone="info">Admin accounts default to the admin workspace</StatusPill>
                     </div>
                 </div>
             </section>

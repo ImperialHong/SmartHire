@@ -18,6 +18,9 @@ public record RegisterRequest(
     String fullName,
 
     @Size(max = 20, message = "phone length must be less than or equal to 20")
-    String phone
+    String phone,
+
+    @NotBlank(message = "roleCode is required")
+    String roleCode
 ) {
 }

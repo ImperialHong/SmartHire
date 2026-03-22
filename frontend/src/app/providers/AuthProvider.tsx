@@ -2,7 +2,8 @@ import type { PropsWithChildren } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { login } from "../../features/auth/api/login";
 import { getCurrentUser } from "../../features/auth/api/me";
-import type { AuthSession, AuthUser, LoginRequest } from "../../features/auth/types";
+import { register } from "../../features/auth/api/register";
+import type { AuthResponse, AuthSession, AuthUser, LoginRequest, RegisterRequest } from "../../features/auth/types";
 
 const STORAGE_KEY = "smarthire.frontend.session";
 
@@ -10,6 +11,7 @@ interface AuthContextValue {
     session: AuthSession | null;
     isHydrating: boolean;
     loginWithCredentials: (request: LoginRequest) => Promise<AuthSession>;
+    registerWithDetails: (request: RegisterRequest) => Promise<AuthSession>;
     logout: () => void;
 }
 
@@ -37,6 +39,13 @@ function persistSession(session: AuthSession | null) {
         return;
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+}
+
+function buildSession(response: AuthResponse): AuthSession {
+    return {
+        token: response.accessToken,
+        user: response.user
+    };
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
@@ -89,10 +98,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         isHydrating,
         async loginWithCredentials(request: LoginRequest) {
             const response = await login(request);
-            const nextSession = {
-                token: response.accessToken,
-                user: response.user
-            };
+            const nextSession = buildSession(response);
+            setSession(nextSession);
+            persistSession(nextSession);
+            return nextSession;
+        },
+        async registerWithDetails(request: RegisterRequest) {
+            const response = await register(request);
+            const nextSession = buildSession(response);
             setSession(nextSession);
             persistSession(nextSession);
             return nextSession;
