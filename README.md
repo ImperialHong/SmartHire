@@ -33,7 +33,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 基础操作日志
 - Redis 缓存公共岗位与统计概览
 - RabbitMQ 异步通知链路
-- 定时任务自动关闭过期岗位
+- 定时任务自动关闭过期岗位与面试提醒
 - Flyway 数据库结构迁移
 - 轻量前端工作台
 - 独立前端公共岗位、候选人、HR、Admin 页面
@@ -45,7 +45,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 
 - 更细的统计图表与后台可视化
 - 真实生产环境接入、域名 / HTTPS 与回滚策略
-- 面试提醒或日报类定时任务
+- 更细的日报类定时任务
 
 ## 技术栈
 
@@ -128,6 +128,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - 每个申请当前只允许一条面试记录
 - 更新面试时间、地点、链接、状态、结果
 - 面试安排时会自动推进申请状态到 `INTERVIEW`
+- 定时发送未来 24 小时和未来 1 小时的面试提醒
 
 ### 5. 通知模块
 
@@ -141,6 +142,7 @@ SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标
 - HR 更新投递状态后，通知候选人
 - HR 安排面试后，通知候选人
 - HR 更新面试后，通知候选人
+- 定时向候选人发送未来 24 小时和未来 1 小时的面试提醒
 
 实现方式：
 
@@ -278,6 +280,11 @@ Flyway 迁移会初始化：
 | `APP_JOBS_EXPIRATION_ENABLED` | `true` | 是否开启岗位过期定时任务 |
 | `APP_JOBS_EXPIRATION_CRON` | `0 */5 * * * *` | 过期岗位扫描 cron |
 | `APP_JOBS_EXPIRATION_ZONE` | `Asia/Shanghai` | 定时任务时区 |
+| `APP_INTERVIEWS_REMINDER_ENABLED` | `true` | 是否开启面试提醒定时任务 |
+| `APP_INTERVIEWS_REMINDER_CRON` | `0 */10 * * * *` | 面试提醒扫描 cron |
+| `APP_INTERVIEWS_REMINDER_ZONE` | `Asia/Shanghai` | 面试提醒定时任务时区 |
+| `APP_INTERVIEWS_REMINDER_UPCOMING_WINDOW_HOURS` | `24` | 未来多少小时内发送常规面试提醒 |
+| `APP_INTERVIEWS_REMINDER_STARTING_SOON_WINDOW_MINUTES` | `60` | 未来多少分钟内发送即将开始提醒 |
 | `SPRING_CACHE_TYPE` | `redis` | Spring Cache 类型 |
 | `SERVER_PORT` | `8080` | 服务端口 |
 | `JWT_SECRET` | `smarthire-dev-secret-key-at-least-32-bytes-long` | JWT 密钥 |
@@ -361,7 +368,7 @@ mvn test
 
 当前后端测试结果：
 
-- `88` 个测试通过
+- `91` 个测试通过
 - 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、定时任务、Swagger 文档端点、前端欢迎页和基础安全规则
 - 已补充基于 Testcontainers 的 Flyway / MySQL、Redis 缓存失效、RabbitMQ 异步通知集成测试
 
@@ -718,7 +725,7 @@ Content-Type: application/json
 
 1. 先补更细的统计图表或管理员可视化视图
 2. 再补真实生产环境接入、域名 / HTTPS、回滚与环境分支策略
-3. 继续做面试提醒或日报类定时任务
+3. 继续做日报类定时任务
 4. 最后视情况补邮件 / 短信等通知扩展消费者
 
 ## 补充资料

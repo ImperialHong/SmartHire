@@ -26,6 +26,9 @@ app:
   jobs:
     expiration:
       enabled: false
+  interviews:
+    reminder:
+      enabled: false
   jwt:
     secret: smarthire-test-secret-key-at-least-32-bytes
     access-token-expiration-seconds: 3600

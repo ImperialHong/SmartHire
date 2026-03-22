@@ -399,7 +399,7 @@ SmartHire/
 - P1 高价值增强已完成：简历上传、统计、管理员轻量后台、操作日志、Docker、Swagger、Postman
 - Redis 缓存已完成第一阶段：公共岗位列表、岗位详情、统计概览
 - RabbitMQ 异步通知已完成第一阶段：事务提交后发布消息，消费者异步落库站内通知
-- 定时任务已完成第一阶段：自动关闭已过截止时间且仍为 OPEN 的岗位，并记录系统操作日志
+- 定时任务已完成第一阶段：自动关闭已过截止时间且仍为 OPEN 的岗位，并补充面试前 24 小时 / 1 小时提醒
 - 独立 `frontend/` React 应用已完成公共岗位、Candidate、HR、Admin 主流程
 - `docker compose` 已支持 `mysql + redis + rabbitmq + backend + frontend` 一键启动
 - 基于 Testcontainers 的 Flyway / Redis / RabbitMQ 集成测试已补齐第一阶段
@@ -412,7 +412,7 @@ SmartHire/
 
 1. 更细的统计图表或管理员可视化视图
 2. 真实生产环境接入、域名 / HTTPS、回滚与环境分支策略
-3. 面试提醒或日报类定时任务
+3. 日报类定时任务
 4. 邮件 / 短信等通知扩展消费者
 5. README / 计划 / demo guide 口径持续同步
 

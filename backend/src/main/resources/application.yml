@@ -73,3 +73,10 @@ app:
       enabled: ${APP_JOBS_EXPIRATION_ENABLED:true}
       cron: ${APP_JOBS_EXPIRATION_CRON:0 */5 * * * *}
       zone: ${APP_JOBS_EXPIRATION_ZONE:Asia/Shanghai}
+  interviews:
+    reminder:
+      enabled: ${APP_INTERVIEWS_REMINDER_ENABLED:true}
+      cron: ${APP_INTERVIEWS_REMINDER_CRON:0 */10 * * * *}
+      zone: ${APP_INTERVIEWS_REMINDER_ZONE:Asia/Shanghai}
+      upcoming-window-hours: ${APP_INTERVIEWS_REMINDER_UPCOMING_WINDOW_HOURS:24}
+      starting-soon-window-minutes: ${APP_INTERVIEWS_REMINDER_STARTING_SOON_WINDOW_MINUTES:60}

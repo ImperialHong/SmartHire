@@ -37,6 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
         "APPLICATION_STATUS_CHANGED",
         "INTERVIEW_SCHEDULED",
         "INTERVIEW_UPDATED",
+        "INTERVIEW_REMINDER",
         "SYSTEM"
     );
 

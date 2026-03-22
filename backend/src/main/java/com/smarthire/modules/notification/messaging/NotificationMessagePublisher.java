@@ -33,6 +33,7 @@ public class NotificationMessagePublisher {
             case "APPLICATION_STATUS_CHANGED" -> "application.status.changed";
             case "INTERVIEW_SCHEDULED" -> "interview.scheduled";
             case "INTERVIEW_UPDATED" -> "interview.updated";
+            case "INTERVIEW_REMINDER" -> "interview.reminder";
             case "SYSTEM" -> "system.general";
             default -> throw new IllegalArgumentException("Unsupported notification type: " + type);
         };
