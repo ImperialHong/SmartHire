@@ -14,7 +14,10 @@ import { scheduleInterview } from "../../features/interviews/api/scheduleIntervi
 import { updateInterview } from "../../features/interviews/api/updateInterview";
 import type { InterviewItem, ScheduleInterviewRequest, UpdateInterviewRequest } from "../../features/interviews/types";
 import { getStatisticsOverview } from "../../features/statistics/api/getStatisticsOverview";
+import { buildDistributionItems, readCount } from "../../features/statistics/utils";
+import { DistributionChart } from "../../shared/components/DistributionChart";
 import { EmptyState } from "../../shared/components/EmptyState";
+import { ProgressStatCard } from "../../shared/components/ProgressStatCard";
 import { SectionCard } from "../../shared/components/SectionCard";
 import { StatusPill } from "../../shared/components/StatusPill";
 import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
@@ -304,6 +307,50 @@ export function HrDashboardPage() {
         { label: "Applicants on selected job", value: selectedJob ? applicationCount : "--" },
         { label: "Interviews on selected job", value: selectedJob ? interviewCount : "--" }
     ];
+    const hrAnalytics = statsQuery.data ? {
+        progressCards: [
+            {
+                label: "Open jobs share",
+                numerator: readCount(statsQuery.data.jobs.byStatus, "OPEN"),
+                denominator: statsQuery.data.jobs.total,
+                helper: "How much of your portfolio is actively accepting applications."
+            },
+            {
+                label: "Resume coverage",
+                numerator: statsQuery.data.applications.withResume,
+                denominator: statsQuery.data.applications.total,
+                helper: "Applicants who already uploaded a resume."
+            },
+            {
+                label: "Upcoming interviews",
+                numerator: statsQuery.data.interviews.upcoming,
+                denominator: statsQuery.data.interviews.total,
+                helper: "Scheduled conversations still ahead of you."
+            }
+        ],
+        charts: [
+            {
+                title: "Job status mix",
+                subtitle: "How your current postings are distributed.",
+                items: buildDistributionItems(statsQuery.data.jobs.byStatus, [...JOB_STATUS_OPTIONS], getStatusTone)
+            },
+            {
+                title: "Application pipeline",
+                subtitle: "Where active applicants currently sit.",
+                items: buildDistributionItems(statsQuery.data.applications.byStatus, [...APPLICATION_STATUS_OPTIONS], getStatusTone)
+            },
+            {
+                title: "Interview status",
+                subtitle: "Scheduled, completed, and cancelled interviews.",
+                items: buildDistributionItems(statsQuery.data.interviews.byStatus, [...INTERVIEW_STATUS_OPTIONS], getStatusTone)
+            },
+            {
+                title: "Interview outcomes",
+                subtitle: "Result mix across finished interviews.",
+                items: buildDistributionItems(statsQuery.data.interviews.byResult, [...INTERVIEW_RESULT_OPTIONS], getStatusTone)
+            }
+        ]
+    } : null;
 
     useEffect(() => {
         if (!ownedJobs.length) {
@@ -660,6 +707,55 @@ export function HrDashboardPage() {
             </SectionCard>
 
             {feedback ? <div className={`notice notice--${feedback.tone}`}>{feedback.text}</div> : null}
+
+            <SectionCard
+                eyebrow="Analytics"
+                title="See the recruiting pipeline at a glance"
+                description={statsQuery.data
+                    ? `Snapshot generated at ${formatDateTime(statsQuery.data.generatedAt)} for your recruiter scope.`
+                    : "This view turns the existing statistics API into quick visual checks for pipeline health."}
+            >
+                {statsQuery.isLoading ? (
+                    <EmptyState
+                        title="Loading HR analytics"
+                        description="Pulling the latest recruiting snapshot for your workspace."
+                    />
+                ) : statsQuery.isError ? (
+                    <EmptyState
+                        title="Could not load analytics"
+                        description={statsQuery.error instanceof Error ? statsQuery.error.message : "Unexpected error"}
+                    />
+                ) : hrAnalytics ? (
+                    <div className="page-grid">
+                        <div className="chart-grid chart-grid--three">
+                            {hrAnalytics.progressCards.map(card => (
+                                <ProgressStatCard
+                                    key={card.label}
+                                    denominator={card.denominator}
+                                    helper={card.helper}
+                                    label={card.label}
+                                    numerator={card.numerator}
+                                />
+                            ))}
+                        </div>
+                        <div className="chart-grid chart-grid--two">
+                            {hrAnalytics.charts.map(chart => (
+                                <DistributionChart
+                                    key={chart.title}
+                                    items={chart.items}
+                                    subtitle={chart.subtitle}
+                                    title={chart.title}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <EmptyState
+                        title="No analytics available"
+                        description="Statistics charts will appear here once recruiting data is available."
+                    />
+                )}
+            </SectionCard>
 
             {selectedJob ? (
                 <div className="dashboard-grid dashboard-grid--three">

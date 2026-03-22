@@ -8,7 +8,10 @@ import type { AdminJobItem, AdminUserItem } from "../../features/admin/types";
 import { listOperationLogs } from "../../features/operation-logs/api/listOperationLogs";
 import type { OperationLogItem } from "../../features/operation-logs/types";
 import { getStatisticsOverview } from "../../features/statistics/api/getStatisticsOverview";
+import { buildDistributionItems, readCount } from "../../features/statistics/utils";
+import { DistributionChart } from "../../shared/components/DistributionChart";
 import { EmptyState } from "../../shared/components/EmptyState";
+import { ProgressStatCard } from "../../shared/components/ProgressStatCard";
 import { SectionCard } from "../../shared/components/SectionCard";
 import { StatusPill } from "../../shared/components/StatusPill";
 import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
@@ -16,6 +19,9 @@ import { formatDateTime, formatSalaryRange } from "../../shared/lib/formatters";
 const USER_STATUS_OPTIONS = ["", "ACTIVE", "DISABLED"] as const;
 const USER_ROLE_OPTIONS = ["", "CANDIDATE", "HR", "ADMIN"] as const;
 const JOB_STATUS_OPTIONS = ["", "OPEN", "CLOSED", "EXPIRED"] as const;
+const APPLICATION_STATUS_OPTIONS = ["APPLIED", "REVIEWING", "INTERVIEW", "OFFERED", "REJECTED"] as const;
+const INTERVIEW_STATUS_OPTIONS = ["SCHEDULED", "COMPLETED", "CANCELLED"] as const;
+const INTERVIEW_RESULT_OPTIONS = ["PENDING", "PASSED", "FAILED"] as const;
 const LOG_ACTION_OPTIONS = [
     "",
     "JOB_CREATED",
@@ -47,30 +53,6 @@ function getStatusTone(status: string | null | undefined) {
 
 function hasAdminRole(user: AdminUserItem) {
     return user.roles.includes("ADMIN");
-}
-
-function formatStatusBreakdown(title: string, entries: Array<[string, number]>) {
-    if (!entries.length) {
-        return (
-            <div className="panel panel--soft">
-                <strong>{title}</strong>
-                <p className="muted-text">No data yet.</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="panel panel--soft">
-            <strong>{title}</strong>
-            <div className="inline-pills inline-pills--wrap">
-                {entries.map(([label, count]) => (
-                    <StatusPill key={label} tone={getStatusTone(label)}>
-                        {label}: {count}
-                    </StatusPill>
-                ))}
-            </div>
-        </div>
-    );
 }
 
 export function AdminDashboardPage() {
@@ -171,12 +153,50 @@ export function AdminDashboardPage() {
         { label: "Visible logs", value: logCards.length },
         { label: "Active filters", value: activeFilterCount }
     ];
-
-    const statsPanels = statsQuery.data ? [
-        formatStatusBreakdown("Job status mix", Object.entries(statsQuery.data.jobs.byStatus)),
-        formatStatusBreakdown("Application status mix", Object.entries(statsQuery.data.applications.byStatus)),
-        formatStatusBreakdown("Interview outcomes", Object.entries(statsQuery.data.interviews.byResult))
-    ] : [];
+    const adminAnalytics = statsQuery.data ? {
+        progressCards: [
+            {
+                label: "Open jobs share",
+                numerator: readCount(statsQuery.data.jobs.byStatus, "OPEN"),
+                denominator: statsQuery.data.jobs.total,
+                helper: "How much of the platform inventory is still open."
+            },
+            {
+                label: "Resume coverage",
+                numerator: statsQuery.data.applications.withResume,
+                denominator: statsQuery.data.applications.total,
+                helper: "Applications that already include an uploaded resume."
+            },
+            {
+                label: "Upcoming interviews",
+                numerator: statsQuery.data.interviews.upcoming,
+                denominator: statsQuery.data.interviews.total,
+                helper: "Scheduled interviews that have not happened yet."
+            }
+        ],
+        charts: [
+            {
+                title: "Job status mix",
+                subtitle: "Open, closed, and expired jobs across the platform.",
+                items: buildDistributionItems(statsQuery.data.jobs.byStatus, JOB_STATUS_OPTIONS.filter(Boolean) as string[], getStatusTone)
+            },
+            {
+                title: "Application status mix",
+                subtitle: "Distribution of candidates through the recruiting funnel.",
+                items: buildDistributionItems(statsQuery.data.applications.byStatus, [...APPLICATION_STATUS_OPTIONS], getStatusTone)
+            },
+            {
+                title: "Interview status",
+                subtitle: "How interview activity is progressing.",
+                items: buildDistributionItems(statsQuery.data.interviews.byStatus, [...INTERVIEW_STATUS_OPTIONS], getStatusTone)
+            },
+            {
+                title: "Interview outcomes",
+                subtitle: "Result breakdown for tracked interviews.",
+                items: buildDistributionItems(statsQuery.data.interviews.byResult, [...INTERVIEW_RESULT_OPTIONS], getStatusTone)
+            }
+        ]
+    } : null;
 
     function handleToggleUserStatus(user: AdminUserItem) {
         const nextStatus = user.status === "ACTIVE" ? "DISABLED" : "ACTIVE";
@@ -292,13 +312,54 @@ export function AdminDashboardPage() {
 
             {feedback ? <div className={`notice notice--${feedback.tone}`}>{feedback.text}</div> : null}
 
-            {statsPanels.length ? (
-                <div className="dashboard-grid dashboard-grid--three">
-                    {statsPanels.map((panel, index) => (
-                        <div key={index}>{panel}</div>
-                    ))}
-                </div>
-            ) : null}
+            <SectionCard
+                eyebrow="Analytics"
+                title="Track platform health visually"
+                description={statsQuery.data
+                    ? `Snapshot generated at ${formatDateTime(statsQuery.data.generatedAt)} for the global admin scope.`
+                    : "Use the live statistics overview to spot recruiting bottlenecks and platform health quickly."}
+            >
+                {statsQuery.isLoading ? (
+                    <EmptyState
+                        title="Loading admin analytics"
+                        description="Pulling the latest platform-wide recruiting snapshot."
+                    />
+                ) : statsQuery.isError ? (
+                    <EmptyState
+                        title="Could not load analytics"
+                        description={statsQuery.error instanceof Error ? statsQuery.error.message : "Unexpected error"}
+                    />
+                ) : adminAnalytics ? (
+                    <div className="page-grid">
+                        <div className="chart-grid chart-grid--three">
+                            {adminAnalytics.progressCards.map(card => (
+                                <ProgressStatCard
+                                    key={card.label}
+                                    denominator={card.denominator}
+                                    helper={card.helper}
+                                    label={card.label}
+                                    numerator={card.numerator}
+                                />
+                            ))}
+                        </div>
+                        <div className="chart-grid chart-grid--two">
+                            {adminAnalytics.charts.map(chart => (
+                                <DistributionChart
+                                    key={chart.title}
+                                    items={chart.items}
+                                    subtitle={chart.subtitle}
+                                    title={chart.title}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <EmptyState
+                        title="No analytics available"
+                        description="Charts will appear here once the statistics overview returns data."
+                    />
+                )}
+            </SectionCard>
 
             <SectionCard
                 eyebrow="Jobs Oversight"

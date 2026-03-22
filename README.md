@@ -1,209 +1,35 @@
 # SmartHire
 
-SmartHire 是一个面向校招/招聘场景的招聘平台练手项目，目标是做出一条能写进简历、也能在面试里讲清楚的业务闭环。
-
-当前仓库已经完成后端核心流程：
-
-- 候选人注册、登录、查看个人信息
-- 候选人上传 PDF 简历文件
-- HR/管理员发布岗位、修改岗位、删除岗位
-- 候选人查看岗位、投递岗位、防重复投递
-- HR/管理员查看投递并更新状态
-- HR/管理员安排面试、更新面试
-- 站内通知联动投递和面试流程
-- HR/管理员查看基础招聘统计概览
-- 管理员分页查看用户并启用/禁用账号
-- 管理员查看基础操作日志
-- 可直接导入 Postman collection 跑完整接口流程
-- Spring Boot 同源提供轻量前端工作台
-- 独立 `frontend/` React 应用已接入公共岗位、候选人、HR、Admin 主流程
-
-## 当前阶段
-
-项目目前可以视为：`P0 已完成，P1 已完成，P2 已完成 Redis、RabbitMQ、定时任务与 CI/CD 第一阶段，下一步进入统计可视化和生产部署增强。`
-
-`auth -> jobs -> applications -> interviews -> notifications`
-
-已完成的增强项包括：
-
-- 简历文件上传
-- 基础数据统计
-- Docker 与 API 文档入口
-- 管理员轻量后台基础能力
-- 基础操作日志
-- Redis 缓存公共岗位与统计概览
-- RabbitMQ 异步通知链路
-- 定时任务自动关闭过期岗位与面试提醒
-- Flyway 数据库结构迁移
-- 轻量前端工作台
-- 独立前端公共岗位、候选人、HR、Admin 页面
-- `docker compose` 下的独立前端容器化部署
-- GitHub Actions 自动测试、构建与镜像校验
-- GHCR 镜像发布与手动触发的 SSH 部署骨架
-
-已完成但还可以继续增强的方向：
-
-- 更细的统计图表与后台可视化
-- 真实生产环境接入、域名 / HTTPS 与回滚策略
-- 更细的日报类定时任务
+SmartHire 是一个围绕 Java、Spring Boot、Spring Security、JWT、MySQL 等技术栈搭建的招聘管理练手项目，目标是把认证鉴权、业务建模、缓存、消息队列、定时任务、数据库迁移、容器化和前后端协作串成一条完整的练习链路。
 
 ## 技术栈
 
-- Java 21
-- Spring Boot 3.3.4
-- Spring Security
-- MyBatis-Plus
-- MySQL 8
-- Redis
-- RabbitMQ
-- Flyway
-- JWT
-- Springdoc OpenAPI / Swagger UI
-- React 18
-- TypeScript
-- Vite
-- React Router
-- TanStack Query
-- Maven
-- JUnit 5 + MockMvc + Mockito + Testcontainers
+- 后端：Java 21、Spring Boot 3.3.4、Spring Security、MyBatis-Plus、JWT、Flyway、Maven
+- 数据与中间件：MySQL 8、Redis、RabbitMQ
+- 前端：React 18、TypeScript、Vite、React Router、TanStack Query
+- 工程化：Docker、Docker Compose、Springdoc OpenAPI / Swagger UI、GitHub Actions
+- 测试：JUnit 5、MockMvc、Mockito、Testcontainers
 
-## 已实现模块
+## 目前已完成的核心流程
 
-### 1. 认证与权限
+- 认证与权限：支持 `CANDIDATE / HR` 自助注册、JWT 登录、当前用户信息查询，`ADMIN` 账号单独维护
+- 岗位流程：支持岗位创建、修改、删除、详情与分页筛选，HR 只能管理自己发布的岗位，管理员可跨岗位查看与管理
+- 投递流程：候选人可上传 PDF 简历、投递岗位、查看自己的投递记录，同一候选人对同一岗位防重复投递
+- 招聘流转：HR / Admin 可查看投递、推进状态、安排或更新面试，申请状态会联动进入面试阶段
+- 通知流程：投递、状态更新、面试安排、面试更新、面试提醒都会通过 RabbitMQ 异步生成站内通知
+- 统计与后台：支持 HR 视角和 Admin 视角的统计概览，管理员可管理用户、查看岗位总览与操作日志
+- 工程增强：已接入 Redis 缓存、Flyway 数据库迁移、岗位过期定时任务、面试提醒定时任务、Docker Compose、本地独立前端和基础 CI/CD 骨架
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
+当前主链路已经打通：
 
-说明：
+`auth -> jobs -> applications -> interviews -> notifications`
 
-- 注册接口允许自助创建 `CANDIDATE / HR` 角色账号，`ADMIN` 账号单独维护
-- 鉴权方式为 JWT Bearer Token
-- 当前角色模型为 `CANDIDATE / HR / ADMIN`
+## 接下来要做的流程
 
-### 2. 岗位模块
-
-- `POST /api/jobs`
-- `PUT /api/jobs/{id}`
-- `DELETE /api/jobs/{id}`
-- `GET /api/jobs/{id}`
-- `GET /api/jobs`
-
-支持能力：
-
-- 岗位创建、更新、删除、详情
-- 关键词、城市、分类、状态筛选
-- 分页查询
-- Redis 缓存公共岗位列表与岗位详情
-- 定时任务自动把已过截止时间且仍为 `OPEN` 的岗位更新为 `EXPIRED`
-- HR 只能管理自己发布的岗位，管理员可管理全部岗位
-
-### 3. 投递模块
-
-- `POST /api/resumes/upload`
-- `POST /api/applications`
-- `GET /api/applications/me`
-- `GET /api/jobs/{jobId}/applications`
-- `PATCH /api/applications/{id}/status`
-
-支持能力：
-
-- 候选人上传 PDF 简历文件
-- 返回可直接写入 `resumeFilePath` 的逻辑路径
-- 候选人投递岗位
-- 同一候选人同一岗位防重复投递
-- HR 查看自己岗位下的投递记录
-- 投递状态流转：`APPLIED / REVIEWING / INTERVIEW / OFFERED / REJECTED`
-
-### 4. 面试模块
-
-- `POST /api/interviews`
-- `PATCH /api/interviews/{id}`
-- `GET /api/interviews/me`
-- `GET /api/jobs/{jobId}/interviews`
-
-支持能力：
-
-- 为申请安排面试
-- 每个申请当前只允许一条面试记录
-- 更新面试时间、地点、链接、状态、结果
-- 面试安排时会自动推进申请状态到 `INTERVIEW`
-- 定时发送未来 24 小时和未来 1 小时的面试提醒
-
-### 5. 通知模块
-
-- `GET /api/notifications`
-- `GET /api/notifications/unread-count`
-- `PATCH /api/notifications/{id}/read`
-
-当前自动通知场景：
-
-- 候选人投递成功后，通知岗位发布者
-- HR 更新投递状态后，通知候选人
-- HR 安排面试后，通知候选人
-- HR 更新面试后，通知候选人
-- 定时向候选人发送未来 24 小时和未来 1 小时的面试提醒
-
-实现方式：
-
-- 应用、投递状态、面试相关事件在事务提交后发布到 RabbitMQ
-- 通知消费者异步落库到 `notifications`
-- 消息消费使用 `event_key` 做幂等去重
-
-### 6. 统计模块
-
-- `GET /api/statistics/overview`
-
-支持能力：
-
-- `HR` 查看自己发布岗位范围内的概览统计
-- `ADMIN` 查看全局概览统计
-- 返回岗位、投递、面试三类基础聚合数据
-- 包含投递状态分布、面试状态分布和面试结果分布
-- Redis 缓存统计概览，岗位/投递/面试写操作后自动失效
-
-### 7. 管理员模块
-
-- `GET /api/admin/jobs`
-- `GET /api/admin/users`
-- `PATCH /api/admin/users/{id}/status`
-
-支持能力：
-
-- 管理员分页查看全部岗位
-- 支持按关键字、岗位状态、招聘者信息筛选
-- 返回岗位状态、招聘者快照、更新时间等总览信息
-- 管理员可通过现有岗位更新接口做轻量状态管理
-- 管理员分页查看全部用户
-- 支持按关键字、状态、角色筛选
-- 返回用户角色、状态、最近登录时间
-- 支持启用 / 禁用账号
-
-### 8. 操作日志模块
-
-- `GET /api/admin/operation-logs`
-
-支持能力：
-
-- 管理员查看系统关键写操作日志
-- 支持按动作、目标类型、操作者筛选
-- 记录操作者快照、目标对象和简要摘要
-- 当前覆盖岗位、投递、面试、用户状态等关键写操作
-
-### 9. 轻量前端工作台
-
-访问地址：
-
-- `GET /`
-
-当前支持：
-
-- 公共岗位浏览与筛选
-- 选中岗位详情卡与跨面板工作上下文
-- 候选人通过角色化登录入口进入工作区，完成简历上传、投递、查看申请/面试/通知
-- HR 通过角色化登录入口进入工作区，完成岗位创建、更新/删除、查看投递、推进状态、安排或更新面试
-- Admin 登录后进入管理工作区，查看统计、筛选岗位、管理用户、筛选操作日志
-- 同源调用后端 API，无需额外前端服务
+- 继续完善 HR / Admin 的统计图表与后台可视化体验
+- 补更完整的日报类或汇总类定时任务
+- 继续增强部署链路，包括真实环境接入、域名 / HTTPS、回滚策略
+- 视情况扩展通知消费者，例如邮件或短信提醒
 
 ## 仓库结构
 
@@ -219,43 +45,55 @@ SmartHire/
 
 ## 快速开始
 
-### 1. 初始化数据库
+### 推荐方式：Docker Compose 一键启动
 
-先创建数据库：
-
-```sql
-CREATE DATABASE smarthire CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-然后启动后端，Flyway 会自动执行 `backend/src/main/resources/db/migration` 下的结构迁移脚本：
-
-```text
-V1__init_schema.sql
-V2__add_operation_logs.sql
-V3__add_notification_event_key.sql
-```
-
-如果你想导入演示数据，再手动执行：
+如果你本地已经安装 Docker，直接在项目根目录执行：
 
 ```bash
-mysql -u root -p smarthire < sql/002_seed_demo_data.sql
+docker compose up --build
 ```
 
-Flyway 迁移会初始化：
+这会一次性拉起：
 
-- 核心表结构
-- 操作日志表
-- 通知异步幂等字段
-- 角色数据：`CANDIDATE`、`HR`、`ADMIN`
+- MySQL
+- Redis
+- RabbitMQ
+- Spring Boot backend
+- 独立 React frontend
 
-`002` 会初始化：
+backend 启动后会自动通过 Flyway 执行 `backend/src/main/resources/db/migration` 下的结构迁移脚本。
 
-- 演示账号
-- 演示岗位
-- 演示投递、面试与通知数据
-- 覆盖多候选人、双 HR、不同岗位状态与不同投递阶段的数据分层
+如果你想导入演示数据，等服务启动成功后执行：
 
-### 2. 配置环境变量
+```bash
+docker compose exec -T mysql mysql -uroot -proot smarthire < sql/002_seed_demo_data.sql
+```
+
+默认访问地址：
+
+- `http://localhost:5173` - Independent React frontend
+- `http://localhost:8080` - SmartHire backend
+- `http://localhost:8080/swagger-ui.html` - Swagger UI
+- `http://localhost:15672` - RabbitMQ Management UI
+
+如果你之前已经启动过旧版本的 MySQL volume，最简单的本地升级方式是：
+
+- 运行 `docker compose down -v`
+- 然后重新执行 `docker compose up --build`
+
+停止服务：
+
+```bash
+docker compose down
+```
+
+如果想连同数据库卷一起删除：
+
+```bash
+docker compose down -v
+```
+
+### 可选：本地拆分启动
 
 本地开发建议使用 `JDK 21`。
 
@@ -304,7 +142,7 @@ Flyway 迁移会初始化：
 - 后端 `8080`
 - Vite 本地代理 `/api -> http://localhost:8080`
 
-### 3. 启动后端
+### 启动后端
 
 ```bash
 cd backend
@@ -336,7 +174,7 @@ Postman 文件也已经放在仓库里：
 - `docs/postman/SmartHire.local.postman_environment.json`
 - `docs/postman/README.md`
 
-### 4. 启动独立前端
+### 启动独立前端
 
 如果你要使用独立前端开发：
 
@@ -359,7 +197,7 @@ http://localhost:5173
 - HR：岗位创建/编辑/删除、查看申请、更新申请状态、安排/更新面试、统计概览
 - Admin：全局统计、岗位总览、用户状态管理、操作日志筛选
 
-### 5. 运行后端测试
+### 运行后端测试
 
 ```bash
 cd backend
@@ -368,57 +206,11 @@ mvn test
 
 当前后端测试结果：
 
-- `91` 个测试通过
+- `93` 个测试通过
 - 覆盖认证、管理员用户管理、操作日志、简历上传、统计、岗位、投递、面试、通知、Redis 缓存、RabbitMQ 通知链、定时任务、Swagger 文档端点、前端欢迎页和基础安全规则
 - 已补充基于 Testcontainers 的 Flyway / MySQL、Redis 缓存失效、RabbitMQ 异步通知集成测试
 
-### 6. 使用 Docker Compose 启动
-
-如果你本地已经安装 Docker，也可以直接在项目根目录执行：
-
-```bash
-docker compose up --build
-```
-
-启动后，backend 容器会自动通过 Flyway 执行数据库结构迁移。
-
-为了兼容你本地已经存在的旧 MySQL volume，compose 默认会带上：
-
-- `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true`
-- `SPRING_FLYWAY_BASELINE_VERSION=3`
-
-这样当前已经处于最新结构、但还没有 Flyway 历史表的本地数据库，也能被平滑接管。
-
-如果你想导入演示账号和样例数据，等 backend 启动成功后再执行：
-
-```bash
-docker compose exec -T mysql mysql -uroot -proot smarthire < sql/002_seed_demo_data.sql
-```
-
-如果你之前已经启动过旧版本的 MySQL volume，最简单的本地升级方式是：
-
-- 运行 `docker compose down -v`
-- 然后重新执行 `docker compose up --build`
-
-如果你是本地直接跑 `mvn spring-boot:run` 而不是 compose，并且连接的是旧的预 Flyway 数据库，可以临时加：
-
-```bash
-export SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
-export SPRING_FLYWAY_BASELINE_VERSION=3
-```
-
-前提是这个数据库已经处于当前结构版本。
-
-服务默认暴露：
-
-- `http://localhost:5173` - Independent React frontend
-- `http://localhost:8080` - SmartHire backend
-- `localhost:3306` - MySQL
-- `localhost:6379` - Redis
-- `localhost:5672` - RabbitMQ AMQP
-- `http://localhost:15672` - RabbitMQ Management UI
-
-### 7. GitHub Actions CI
+### GitHub Actions CI
 
 仓库已经提供基础 CI 工作流：
 
@@ -450,7 +242,7 @@ export SPRING_FLYWAY_BASELINE_VERSION=3
 - `http://localhost:5173` 是独立前端容器，`/api` 会自动反向代理到后端容器
 - `http://localhost:8080` 仍然保留 Spring Boot 同源提供的轻量 workbench
 
-### 8. GitHub Actions CD
+### GitHub Actions CD
 
 仓库已经补上第一版 CD 骨架：
 
@@ -529,7 +321,7 @@ docker compose down -v
 
 ## 如何创建 HR / ADMIN 账号
 
-当前注册接口默认只能注册候选人账号。如果你已经执行了 `sql/002_seed_demo_data.sql`，可以直接使用下面的演示账号。
+当前注册接口支持自助创建 `CANDIDATE / HR` 账号，`ADMIN` 账号仍然建议通过演示数据或手动绑定角色的方式准备。如果你已经执行了 `sql/002_seed_demo_data.sql`，可以直接使用下面的演示账号。
 
 | 角色 | 邮箱 | 密码 |
 | --- | --- | --- |
@@ -538,7 +330,10 @@ docker compose down -v
 | HR | `hr@example.com` | `password123` |
 | Admin | `admin@example.com` | `password123` |
 
-如果你没有导入演示数据，也可以先调用注册接口创建普通用户，再手动绑定角色。
+如果你没有导入演示数据：
+
+- 候选人和 HR 可以直接通过注册接口创建账号
+- Admin 可以先创建普通用户，再手动绑定 `ADMIN` 角色
 
 示例：把某个用户绑定为 HR。
 
